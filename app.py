@@ -3,6 +3,7 @@ import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
+import json
 
 # ==============================
 # CONFIGURACIÓN GOOGLE SHEETS
@@ -13,8 +14,33 @@ SHEET_HISTORIAL = "HISTORIAL"
 scope = ["https://spreadsheets.google.com/feeds",
          "https://www.googleapis.com/auth/drive"]
 
-creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+#creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+#client = gspread.authorize(creds)
+#--------------------------
+
+# Acceder al secreto como diccionario
+credentials_dict = {
+    "type": st.secrets["type"],
+    "project_id": st.secrets["project_id"],
+    "private_key_id": st.secrets["private_key_id"],
+    "private_key": st.secrets["private_key"],
+    "client_email": st.secrets["client_email"],
+    "client_id": st.secrets["client_id"],
+    "auth_uri": st.secrets["auth_uri"],
+    "token_uri": st.secrets["token_uri"],
+    "auth_provider_x509_cert_url": st.secrets["auth_provider_x509_cert_url"],
+    "client_x509_cert_url": st.secrets["client_x509_cert_url"]
+}
+
+# Definir el alcance
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+
+# Crear credenciales desde el diccionario
+creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
+
+# Autorizar gspread
 client = gspread.authorize(creds)
+#--------------------------
 
 sheet_inventario = client.open(SHEET_INVENTARIO).sheet1
 sheet_historial = client.open(SHEET_INVENTARIO).worksheet(SHEET_HISTORIAL)
@@ -164,3 +190,4 @@ with st.form("devolucion_form"):
 st.subheader("Historial de préstamos y devoluciones")
 historial = pd.DataFrame(sheet_historial.get_all_records())
 st.dataframe(historial)
+
