@@ -17,12 +17,16 @@ scope = ["https://spreadsheets.google.com/feeds",
 #creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 #client = gspread.authorize(creds)
 #--------------------------
+import streamlit as st
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import json
 
 # Acceder al secreto como diccionario
 credentials_dict = {
-    "type": st.secrets["service_account"],
-    "project_id": st.secrets["inventario-476501"],
-    "private_key_id": st.secrets["b1c866399c99f82757b5a2dfae2ddf690dfaea0b"],
+    "type": st.secrets["type"],
+    "project_id": st.secrets["project_id"],
+    "private_key_id": st.secrets["private_key_id"],
     "private_key": st.secrets["private_key"],
     "client_email": st.secrets["client_email"],
     "client_id": st.secrets["client_id"],
@@ -40,6 +44,7 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope
 
 # Autorizar gspread
 client = gspread.authorize(creds)
+
 #--------------------------
 
 sheet_inventario = client.open(SHEET_INVENTARIO).sheet1
@@ -190,6 +195,7 @@ with st.form("devolucion_form"):
 st.subheader("Historial de préstamos y devoluciones")
 historial = pd.DataFrame(sheet_historial.get_all_records())
 st.dataframe(historial)
+
 
 
 
