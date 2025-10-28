@@ -21,8 +21,8 @@ scope = ["https://spreadsheets.google.com/feeds",
 # Acceder al secreto como diccionario
 credentials_dict = {
     "type": st.secrets["service_account"],
-    "project_id": st.secrets["project_id"],
-    "private_key_id": st.secrets["private_key_id"],
+    "project_id": st.secrets["inventario-476501"],
+    "private_key_id": st.secrets["b1c866399c99f82757b5a2dfae2ddf690dfaea0b"],
     "private_key": st.secrets["private_key"],
     "client_email": st.secrets["client_email"],
     "client_id": st.secrets["client_id"],
@@ -190,5 +190,6 @@ with st.form("devolucion_form"):
 st.subheader("Historial de préstamos y devoluciones")
 historial = pd.DataFrame(sheet_historial.get_all_records())
 st.dataframe(historial)
+
 
 
