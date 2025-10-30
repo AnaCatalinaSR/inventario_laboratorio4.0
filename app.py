@@ -17,33 +17,12 @@ scope = ["https://spreadsheets.google.com/feeds",
 #creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 #client = gspread.authorize(creds)
 #--------------------------
-import streamlit as st
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import json
 
-# Acceder al secreto como diccionario
-credentials_dict = {
-    "type": st.secrets["type"],
-    "project_id": st.secrets["project_id"],
-    "private_key_id": st.secrets["private_key_id"],
-    "private_key": st.secrets["private_key"],
-    "client_email": st.secrets["client_email"],
-    "client_id": st.secrets["client_id"],
-    "auth_uri": st.secrets["auth_uri"],
-    "token_uri": st.secrets["token_uri"],
-    "auth_provider_x509_cert_url": st.secrets["auth_provider_x509_cert_url"],
-    "client_x509_cert_url": st.secrets["client_x509_cert_url"]
-}
-
-# Definir el alcance
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-# Crear credenciales desde el diccionario
-creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
-
-# Autorizar gspread
-client = gspread.authorize(creds)
+# Leer las credenciales desde los secrets de Streamlit Cloud
+creds_json = json.loads(st.secrets["credentials"])
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, scope)
 
 #--------------------------
 
@@ -195,6 +174,7 @@ with st.form("devolucion_form"):
 st.subheader("Historial de préstamos y devoluciones")
 historial = pd.DataFrame(sheet_historial.get_all_records())
 st.dataframe(historial)
+
 
 
 
