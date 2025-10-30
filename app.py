@@ -5,6 +5,20 @@ from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 import json
 
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+creds_json = json.loads(st.secrets["credentials"])
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, scope)
+client = gspread.authorize(creds)
+
+#  Definir los nombres de las hojas
+SHEET_INVENTARIO = "INVENTARIO"
+SHEET_HISTORIAL = "HISTORIAL"
+
+#  Conectar a cada hoja
+sheet_inventario = client.open(SHEET_INVENTARIO).sheet1
+sheet_historial = client.open(SHEET_HISTORIAL).sheet1
+
+'''
 # ==============================
 # CONFIGURACIÓN GOOGLE SHEETS
 # ==============================
@@ -28,7 +42,7 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, scope)
 
 sheet_inventario = client.open(SHEET_INVENTARIO).sheet1
 sheet_historial = client.open(SHEET_INVENTARIO).worksheet(SHEET_HISTORIAL)
-
+'''
 # ==============================
 # FUNCIONES AUXILIARES
 # ==============================
@@ -174,6 +188,7 @@ with st.form("devolucion_form"):
 st.subheader("Historial de préstamos y devoluciones")
 historial = pd.DataFrame(sheet_historial.get_all_records())
 st.dataframe(historial)
+
 
 
 
