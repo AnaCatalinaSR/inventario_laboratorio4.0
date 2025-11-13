@@ -145,68 +145,38 @@ a, p, label, span {
 
 
 #color tablas
-
 st.markdown("""
 <style>
 
-/* ====== CORRIGE TABLAS STREAMLIT (modo moderno st.dataframe) ====== */
-
-/* Fondo general del contenedor */
-[data-testid="stDataFrame"] {
-    background-color: var(--azul-claro) !important;
-    color: var(--texto-oscuro) !important;
+/* === FORZAR MODO CLARO EN DATAFRAME === */
+.ag-theme-streamlit-dark {
+    --ag-background-color: #e9f1fb !important;
+    --ag-odd-row-background-color: #f3f7ff !important;
+    --ag-header-background-color: #004080 !important;
+    --ag-header-foreground-color: #ffffff !important;
+    --ag-foreground-color: #1a1a1a !important;
+    --ag-border-color: #c5d9f2 !important;
+    --ag-font-size: 14px;
 }
 
-/* Estilo sobre el grid de AgGrid interno */
-[data-testid="stDataFrame"] div[role="grid"] {
-    background-color: var(--azul-claro) !important;
-    color: var(--texto-oscuro) !important;
-}
-
-/* Texto dentro de las celdas */
-[data-testid="stDataFrame"] span,
-[data-testid="stDataFrame"] div {
-    color: var(--texto-oscuro) !important;
-}
-
-/* Encabezados de columnas */
-[data-testid="stDataFrame"] div[role="columnheader"] {
-    background-color: var(--azul-principal) !important;
-    color: white !important;
-    font-weight: 600 !important;
-}
-
-/* Celdas normales */
-[data-testid="stDataFrame"] div[role="gridcell"] {
-    background-color: var(--azul-claro) !important;
-    color: var(--texto-oscuro) !important;
-}
-
-/* Filas alternas */
-[data-testid="stDataFrame"] .ag-row-even {
-    background-color: #f3f7ff !important;
-}
-[data-testid="stDataFrame"] .ag-row-odd {
-    background-color: var(--azul-claro) !important;
-}
-
-/* Hover sobre la fila */
-[data-testid="stDataFrame"] .ag-row-hover {
-    background-color: #d7e7ff !important;
-    color: var(--texto-oscuro) !important;
-}
-
-/* Ajuste para que NUNCA quede letras blancas */
-.ag-theme-streamlit-dark,
+/* Para la versión clara */
 .ag-theme-streamlit-light {
-    color: var(--texto-oscuro) !important;
+    --ag-background-color: #e9f1fb !important;
+    --ag-odd-row-background-color: #f3f7ff !important;
+    --ag-header-background-color: #004080 !important;
+    --ag-header-foreground-color: #ffffff !important;
+    --ag-foreground-color: #1a1a1a !important;
+    --ag-border-color: #c5d9f2 !important;
+    --ag-font-size: 14px;
+}
+
+/* Forzar texto negro */
+.ag-root-wrapper, .ag-cell, .ag-header-cell {
+    color: #1a1a1a !important;
 }
 
 </style>
 """, unsafe_allow_html=True)
-
-
-
 # --- Configurar logo ---
 logo_path = "logo-intep.png"
 
@@ -420,6 +390,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
