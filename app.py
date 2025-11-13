@@ -7,6 +7,103 @@ import json
 from PIL import Image
 import streamlit as st
 import os
+# === ESTILO INSTITUCIONAL (Azul & Blanco) ===
+st.markdown("""
+<style>
+/* ===== COLORES INSTITUCIONALES ===== */
+:root {
+    --azul-principal: #004080;
+    --azul-secundario: #0066cc;
+    --azul-claro: #e9f1fb;
+    --blanco: #ffffff;
+    --gris-suave: #f5f6fa;
+}
+
+/* ===== FONDO GENERAL ===== */
+[data-testid="stAppViewContainer"] {
+    background-color: var(--gris-suave);
+}
+
+/* ===== SIDEBAR ===== */
+[data-testid="stSidebar"] {
+    background: var(--azul-principal);
+}
+[data-testid="stSidebar"] * {
+    color: var(--blanco) !important;
+}
+
+/* ===== TITULOS ===== */
+h1, h2, h3, h4 {
+    color: var(--azul-principal);
+    font-family: "Segoe UI", Roboto, sans-serif;
+}
+
+/* ===== BOTONES ===== */
+div.stButton > button {
+    background-color: var(--azul-principal);
+    color: var(--blanco);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+div.stButton > button:hover {
+    background-color: var(--azul-secundario);
+    transform: translateY(-2px);
+}
+
+/* ===== TABLAS ===== */
+.stDataFrame {
+    background: var(--blanco);
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    padding: 8px;
+}
+
+/* ===== FORMULARIOS ===== */
+.stForm {
+    background: var(--blanco);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* ===== INPUTS Y SELECTS ===== */
+.stTextInput > div > div > input,
+.stNumberInput > div > input,
+.stTextArea > div > textarea,
+.stDateInput > div > input {
+    border: 1px solid #d3e3f7;
+    border-radius: 6px;
+    background: var(--blanco);
+}
+.stTextInput > div > div > input:focus,
+.stNumberInput > div > input:focus,
+.stTextArea > div > textarea:focus,
+.stDateInput > div > input:focus {
+    outline: none;
+    border: 1.5px solid var(--azul-secundario);
+    box-shadow: 0 0 4px rgba(0,64,128,0.2);
+}
+
+/* ===== MENSAJES (success, error, warning) ===== */
+.stAlert {
+    border-radius: 8px;
+}
+[data-testid="stSuccess"] {
+    background-color: #e6f4ea;
+    color: #1a6333;
+}
+[data-testid="stError"] {
+    background-color: #fdecea;
+    color: #a30d0d;
+}
+[data-testid="stWarning"] {
+    background-color: #fff4e5;
+    color: #8a6d1d;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # --- Configurar logo ---
 logo_path = "logo-intep.png"
@@ -221,6 +318,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
