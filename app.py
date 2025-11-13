@@ -8,6 +8,11 @@ import json
 st.markdown("""
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 """, unsafe_allow_html=True)
+#logo de la Institución
+with st.sidebar:
+    st.image(logo, width=150)
+    st.markdown("<h3 style='color:#004080;'>Laboratorio Industrial 4.0</h3>", unsafe_allow_html=True)
+
 # ==============================
 # CONFIGURACIÓN GOOGLE SHEETS
 # ==============================
@@ -208,6 +213,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
