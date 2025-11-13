@@ -16,7 +16,7 @@ if os.path.exists(logo_path):
     st.set_page_config(page_title="Gestión de Préstamos", layout="wide", page_icon=logo)
     with st.sidebar:
         st.image(logo, width=150)
-        st.markdown("<h3 style='color:#004080;'>Laboratorio Industrial 4.0</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color:#004080;'>Laboratorio de Industria 4.0</h3>", unsafe_allow_html=True)
 else:
     st.set_page_config(page_title="Gestión de Préstamos", layout="wide", page_icon="🏫")
     with st.sidebar:
@@ -221,6 +221,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
