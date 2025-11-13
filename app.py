@@ -9,7 +9,7 @@ import streamlit as st
 import os
 #color pagina
 
-# === ESTILO INSTITUCIONAL (Versión Clara para Logo Azul) ===
+# === ESTILO INSTITUCIONAL CLARO (texto visible) ===
 st.markdown("""
 <style>
 :root {
@@ -18,26 +18,34 @@ st.markdown("""
     --azul-claro: #e9f1fb;
     --blanco: #ffffff;
     --gris-suave: #f7f9fc;
+    --texto-oscuro: #1a1a1a;
 }
 
 /* ===== FONDO GENERAL ===== */
 [data-testid="stAppViewContainer"] {
     background-color: var(--gris-suave);
+    color: var(--texto-oscuro);
 }
 
-/* ===== SIDEBAR (claro, para que resalte el logo) ===== */
+/* ===== SIDEBAR ===== */
 [data-testid="stSidebar"] {
-    background: var(--blanco);
+    background-color: var(--blanco);
     border-right: 2px solid var(--azul-claro);
 }
 [data-testid="stSidebar"] * {
     color: var(--azul-principal) !important;
     font-weight: 500;
 }
+[data-testid="stSidebarNav"] a {
+    color: var(--azul-principal) !important;
+}
+[data-testid="stSidebarNav"] a:hover {
+    color: var(--azul-secundario) !important;
+}
 
 /* ===== TITULOS ===== */
-h1, h2, h3, h4 {
-    color: var(--azul-principal);
+h1, h2, h3, h4, h5 {
+    color: var(--azul-principal) !important;
     font-family: "Segoe UI", Roboto, sans-serif;
 }
 
@@ -61,6 +69,7 @@ div.stButton > button:hover {
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     padding: 8px;
+    color: var(--texto-oscuro);
 }
 
 /* ===== FORMULARIOS ===== */
@@ -69,6 +78,7 @@ div.stButton > button:hover {
     border-radius: 10px;
     padding: 20px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    color: var(--texto-oscuro);
 }
 
 /* ===== INPUTS ===== */
@@ -79,6 +89,7 @@ div.stButton > button:hover {
     border: 1px solid #d3e3f7;
     border-radius: 6px;
     background: var(--blanco);
+    color: var(--texto-oscuro);
 }
 .stTextInput > div > div > input:focus,
 .stNumberInput > div > input:focus,
@@ -105,8 +116,14 @@ div.stButton > button:hover {
     background-color: #fff4e5;
     color: #8a6d1d;
 }
+
+/* ===== ENLACES Y TEXTOS INTERNOS ===== */
+a, p, label, span {
+    color: var(--texto-oscuro) !important;
+}
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # --- Configurar logo ---
@@ -322,6 +339,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
