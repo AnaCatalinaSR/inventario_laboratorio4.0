@@ -149,43 +149,67 @@ a, p, label, span {
 st.markdown("""
 <style>
 
-/* ===== TABLAS INTERACTIVAS (QUITAR FONDO NEGRO) ===== */
+/* ===== TABLAS INTERACTIVAS ESTILO INSTITUCIONAL ===== */
 
-/* Fondo de toda la tabla */
+/* Fondo general de la tabla */
 [data-testid="stDataFrame"] div {
-    background-color: var(--blanco) !important;
+    background-color: var(--azul-claro) !important;
     color: var(--texto-oscuro) !important;
 }
 
-/* Filas */
-[data-testid="stDataFrame"] table tbody tr {
-    background-color: var(--blanco) !important;
-}
-
-/* Filas alternas */
-[data-testid="stDataFrame"] table tbody tr:nth-child(even) {
+/* Tabla interna */
+[data-testid="stDataFrame"] table {
     background-color: var(--azul-claro) !important;
+    color: var(--texto-oscuro) !important;
+    border-collapse: collapse !important;
+    border: 1px solid #c5d9f2 !important;
 }
 
-/* Encabezado */
+/* Encabezados azules con texto negro */
 [data-testid="stDataFrame"] table thead tr {
     background-color: var(--azul-principal) !important;
     color: var(--blanco) !important;
 }
 
-/* Quitar bordes negros */
-[data-testid="stDataFrame"] table {
-    border-color: var(--azul-principal) !important;
+/* Celdas del encabezado */
+[data-testid="stDataFrame"] table th {
+    background-color: var(--azul-principal) !important;
+    color: var(--blanco) !important;
+    border: 1px solid #dbe8ff !important;
+    font-weight: 600 !important;
+}
+
+/* Filas normales */
+[data-testid="stDataFrame"] table tbody tr {
+    background-color: var(--azul-claro) !important;
+    color: var(--texto-oscuro) !important;
+}
+
+/* Filas alternas un poquito más claras */
+[data-testid="stDataFrame"] table tbody tr:nth-child(even) {
+    background-color: #f3f7ff !important;
+}
+
+/* Celdas */
+[data-testid="stDataFrame"] table td {
+    border: 1px solid #c5d9f2 !important;
+    color: var(--texto-oscuro) !important;
+}
+
+/* Hover fila */
+[data-testid="stDataFrame"] table tbody tr:hover {
+    background-color: #d7e7ff !important;
 }
 
 /* Bordes suaves */
 [data-testid="stDataFrame"] table td,
 [data-testid="stDataFrame"] table th {
-    border: 1px solid #d3e3f7 !important;
+    padding: 6px 10px !important;
 }
 
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # --- Configurar logo ---
@@ -401,6 +425,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
