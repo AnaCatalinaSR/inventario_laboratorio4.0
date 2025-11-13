@@ -4,19 +4,23 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 import json
-#iconos
-st.markdown("""
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-""", unsafe_allow_html=True)
-#logo de la Institución
-logo_path = "logo-intep.png"   # nombre del archivo en tu repo
+from PIL import Image
+import streamlit as st
+import os
 
-logo = None
+# --- Configurar logo ---
+logo_path = "logo-intep.png"
+
 if os.path.exists(logo_path):
-    try:
-        logo = Image.open(logo_path)
-    except Exception as e:
-        st.warning(f"No se pudo abrir el logo local ({logo_path}): {e}")
+    logo = Image.open(logo_path)
+    st.set_page_config(page_title="Gestión de Préstamos", layout="wide", page_icon=logo)
+    with st.sidebar:
+        st.image(logo, width=150)
+        st.markdown("<h3 style='color:#004080;'>Laboratorio Industrial 4.0</h3>", unsafe_allow_html=True)
+else:
+    st.set_page_config(page_title="Gestión de Préstamos", layout="wide", page_icon="🏫")
+    with st.sidebar:
+        st.markdown("<h3 style='color:#004080;'>Laboratorio Industrial 4.0</h3>", unsafe_allow_html=True)
 # ==============================
 # CONFIGURACIÓN GOOGLE SHEETS
 # ==============================
@@ -217,6 +221,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
