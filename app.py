@@ -248,7 +248,7 @@ def actualizar_estado_y_cantidad(id_componente):
 # ==============================
 st.set_page_config(page_title="Gestión de Préstamos", layout="wide")
 
-st.sidebar.title("Menú de Navegación")
+st.sidebar.title("Menú")
 menu = st.sidebar.radio("Selecciona una opción:", [
     "Inventario",
     "Registrar Préstamo",
@@ -390,6 +390,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
