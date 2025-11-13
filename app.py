@@ -9,10 +9,14 @@ st.markdown("""
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 """, unsafe_allow_html=True)
 #logo de la Institución
-with st.sidebar:
-    st.image(logo-intep.png, width=150)
-    st.markdown("<h3 style='color:#004080;'>Laboratorio Industrial 4.0</h3>", unsafe_allow_html=True)
+logo_path = "logo-intep.png"   # nombre del archivo en tu repo
 
+logo = None
+if os.path.exists(logo_path):
+    try:
+        logo = Image.open(logo_path)
+    except Exception as e:
+        st.warning(f"No se pudo abrir el logo local ({logo_path}): {e}")
 # ==============================
 # CONFIGURACIÓN GOOGLE SHEETS
 # ==============================
@@ -213,6 +217,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
