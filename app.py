@@ -7,16 +7,17 @@ import json
 from PIL import Image
 import streamlit as st
 import os
-# === ESTILO INSTITUCIONAL (Azul & Blanco) ===
+#color pagina
+
+# === ESTILO INSTITUCIONAL (Versión Clara para Logo Azul) ===
 st.markdown("""
 <style>
-/* ===== COLORES INSTITUCIONALES ===== */
 :root {
     --azul-principal: #004080;
     --azul-secundario: #0066cc;
     --azul-claro: #e9f1fb;
     --blanco: #ffffff;
-    --gris-suave: #f5f6fa;
+    --gris-suave: #f7f9fc;
 }
 
 /* ===== FONDO GENERAL ===== */
@@ -24,12 +25,14 @@ st.markdown("""
     background-color: var(--gris-suave);
 }
 
-/* ===== SIDEBAR ===== */
+/* ===== SIDEBAR (claro, para que resalte el logo) ===== */
 [data-testid="stSidebar"] {
-    background: var(--azul-principal);
+    background: var(--blanco);
+    border-right: 2px solid var(--azul-claro);
 }
 [data-testid="stSidebar"] * {
-    color: var(--blanco) !important;
+    color: var(--azul-principal) !important;
+    font-weight: 500;
 }
 
 /* ===== TITULOS ===== */
@@ -68,7 +71,7 @@ div.stButton > button:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
-/* ===== INPUTS Y SELECTS ===== */
+/* ===== INPUTS ===== */
 .stTextInput > div > div > input,
 .stNumberInput > div > input,
 .stTextArea > div > textarea,
@@ -86,7 +89,7 @@ div.stButton > button:hover {
     box-shadow: 0 0 4px rgba(0,64,128,0.2);
 }
 
-/* ===== MENSAJES (success, error, warning) ===== */
+/* ===== MENSAJES ===== */
 .stAlert {
     border-radius: 8px;
 }
@@ -104,6 +107,7 @@ div.stButton > button:hover {
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 # --- Configurar logo ---
 logo_path = "logo-intep.png"
@@ -318,6 +322,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
