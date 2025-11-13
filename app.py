@@ -149,62 +149,57 @@ a, p, label, span {
 st.markdown("""
 <style>
 
-/* ===== TABLAS INTERACTIVAS ESTILO INSTITUCIONAL ===== */
+/* ====== CORRIGE TABLAS STREAMLIT (modo moderno st.dataframe) ====== */
 
-/* Fondo general de la tabla */
+/* Fondo general del contenedor */
+[data-testid="stDataFrame"] {
+    background-color: var(--azul-claro) !important;
+    color: var(--texto-oscuro) !important;
+}
+
+/* Estilo sobre el grid de AgGrid interno */
+[data-testid="stDataFrame"] div[role="grid"] {
+    background-color: var(--azul-claro) !important;
+    color: var(--texto-oscuro) !important;
+}
+
+/* Texto dentro de las celdas */
+[data-testid="stDataFrame"] span,
 [data-testid="stDataFrame"] div {
-    background-color: var(--azul-claro) !important;
     color: var(--texto-oscuro) !important;
 }
 
-/* Tabla interna */
-[data-testid="stDataFrame"] table {
-    background-color: var(--azul-claro) !important;
-    color: var(--texto-oscuro) !important;
-    border-collapse: collapse !important;
-    border: 1px solid #c5d9f2 !important;
-}
-
-/* Encabezados azules con texto negro */
-[data-testid="stDataFrame"] table thead tr {
+/* Encabezados de columnas */
+[data-testid="stDataFrame"] div[role="columnheader"] {
     background-color: var(--azul-principal) !important;
-    color: var(--blanco) !important;
-}
-
-/* Celdas del encabezado */
-[data-testid="stDataFrame"] table th {
-    background-color: var(--azul-principal) !important;
-    color: var(--blanco) !important;
-    border: 1px solid #dbe8ff !important;
+    color: white !important;
     font-weight: 600 !important;
 }
 
-/* Filas normales */
-[data-testid="stDataFrame"] table tbody tr {
+/* Celdas normales */
+[data-testid="stDataFrame"] div[role="gridcell"] {
     background-color: var(--azul-claro) !important;
     color: var(--texto-oscuro) !important;
 }
 
-/* Filas alternas un poquito más claras */
-[data-testid="stDataFrame"] table tbody tr:nth-child(even) {
+/* Filas alternas */
+[data-testid="stDataFrame"] .ag-row-even {
     background-color: #f3f7ff !important;
 }
+[data-testid="stDataFrame"] .ag-row-odd {
+    background-color: var(--azul-claro) !important;
+}
 
-/* Celdas */
-[data-testid="stDataFrame"] table td {
-    border: 1px solid #c5d9f2 !important;
+/* Hover sobre la fila */
+[data-testid="stDataFrame"] .ag-row-hover {
+    background-color: #d7e7ff !important;
     color: var(--texto-oscuro) !important;
 }
 
-/* Hover fila */
-[data-testid="stDataFrame"] table tbody tr:hover {
-    background-color: #d7e7ff !important;
-}
-
-/* Bordes suaves */
-[data-testid="stDataFrame"] table td,
-[data-testid="stDataFrame"] table th {
-    padding: 6px 10px !important;
+/* Ajuste para que NUNCA quede letras blancas */
+.ag-theme-streamlit-dark,
+.ag-theme-streamlit-light {
+    color: var(--texto-oscuro) !important;
 }
 
 </style>
@@ -425,6 +420,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
