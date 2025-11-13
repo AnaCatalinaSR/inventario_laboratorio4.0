@@ -144,6 +144,48 @@ a, p, label, span {
 """, unsafe_allow_html=True)
 
 
+#color tablas
+
+st.markdown("""
+<style>
+
+/* ===== TABLAS INTERACTIVAS (QUITAR FONDO NEGRO) ===== */
+
+/* Fondo de toda la tabla */
+[data-testid="stDataFrame"] div {
+    background-color: var(--blanco) !important;
+    color: var(--texto-oscuro) !important;
+}
+
+/* Filas */
+[data-testid="stDataFrame"] table tbody tr {
+    background-color: var(--blanco) !important;
+}
+
+/* Filas alternas */
+[data-testid="stDataFrame"] table tbody tr:nth-child(even) {
+    background-color: var(--azul-claro) !important;
+}
+
+/* Encabezado */
+[data-testid="stDataFrame"] table thead tr {
+    background-color: var(--azul-principal) !important;
+    color: var(--blanco) !important;
+}
+
+/* Quitar bordes negros */
+[data-testid="stDataFrame"] table {
+    border-color: var(--azul-principal) !important;
+}
+
+/* Bordes suaves */
+[data-testid="stDataFrame"] table td,
+[data-testid="stDataFrame"] table th {
+    border: 1px solid #d3e3f7 !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 
 # --- Configurar logo ---
@@ -359,6 +401,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
