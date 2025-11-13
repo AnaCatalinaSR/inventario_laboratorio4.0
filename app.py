@@ -12,6 +12,7 @@ import os
 # === ESTILO INSTITUCIONAL CLARO (texto visible) ===
 st.markdown("""
 <style>
+
 :root {
     --azul-principal: #004080;
     --azul-secundario: #0066cc;
@@ -25,6 +26,23 @@ st.markdown("""
 [data-testid="stAppViewContainer"] {
     background-color: var(--gris-suave);
     color: var(--texto-oscuro);
+}
+
+/* ======= BARRA SUPERIOR (header) ======= */
+header[data-testid="stHeader"] {
+    background-color: var(--azul-claro) !important;
+    color: var(--azul-principal) !important;
+    border-bottom: 2px solid #d0e2ff;
+}
+
+/* Iconos del header */
+header[data-testid="stHeader"] svg {
+    fill: var(--azul-principal) !important;
+}
+
+/* Texto del header */
+header[data-testid="stHeader"] * {
+    color: var(--azul-principal) !important;
 }
 
 /* ===== SIDEBAR ===== */
@@ -117,12 +135,14 @@ div.stButton > button:hover {
     color: #8a6d1d;
 }
 
-/* ===== ENLACES Y TEXTOS INTERNOS ===== */
+/* ===== ENLACES Y TEXTOS ===== */
 a, p, label, span {
     color: var(--texto-oscuro) !important;
 }
+
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
@@ -339,6 +359,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
