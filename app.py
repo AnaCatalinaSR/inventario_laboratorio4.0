@@ -4,13 +4,19 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 import json
-
+#iconos
+st.markdown("""
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+""", unsafe_allow_html=True)
+# ==============================
+# CONFIGURACIÓN GOOGLE SHEETS
+# ==============================
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds_json = json.loads(st.secrets["credentials"])
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, scope)
 client = gspread.authorize(creds)
 
-#hoja de calculo google sheet
+# Abrir archivo principal
 spreadsheet = client.open("INVENTARIO")
 sheet_inventario = spreadsheet.worksheet("INVENTARIO")
 sheet_historial = spreadsheet.worksheet("HISTORIAL")
@@ -19,24 +25,19 @@ sheet_historial = spreadsheet.worksheet("HISTORIAL")
 # FUNCIONES AUXILIARES
 # ==============================
 def actualizar_estado_y_cantidad(id_componente):
-    """Actualiza cantidad disponible y estado del componente según HISTORIAL (sumando cantidades)."""
+    """Actualiza cantidad disponible y estado del componente según HISTORIAL."""
     inventario = sheet_inventario.get_all_records()
     historial = sheet_historial.get_all_records()
 
-    # Buscar el item en inventario
     for i, item in enumerate(inventario):
         if str(item["ID"]).strip().lower() == str(id_componente).strip().lower():
             total = int(item["Cantidad"])
-
-            # Sumar todas las cantidades de PRÉSTAMO para ese ID
             total_prestamos = sum(
                 int(h.get("Cantidad", 0) or 0)
                 for h in historial
                 if str(h["ID"]).strip().lower() == str(id_componente).strip().lower()
                 and str(h["Acción"]).strip().lower() == "préstamo"
             )
-
-            # Sumar todas las cantidades de DEVOLUCIÓN para ese ID
             total_devoluciones = sum(
                 int(h.get("Cantidad", 0) or 0)
                 for h in historial
@@ -47,7 +48,7 @@ def actualizar_estado_y_cantidad(id_componente):
             prestado_activo = max(total_prestamos - total_devoluciones, 0)
             cantidad_disponible = max(total - prestado_activo, 0)
 
-            # Determinar nuevo estado
+            # Determinar estado
             if prestado_activo == 0:
                 nuevo_estado = "Disponible"
             elif prestado_activo < total:
@@ -55,111 +56,160 @@ def actualizar_estado_y_cantidad(id_componente):
             else:
                 nuevo_estado = "No disponible"
 
-            # Actualizar cantidad y estado en INVENTARIO
-            sheet_inventario.update_cell(i + 2, 3, cantidad_disponible)  # columna 3 = Cantidad
-            sheet_inventario.update_cell(i + 2, 4, nuevo_estado)         # columna 4 = Estado
+            # Actualizar en hoja
+            sheet_inventario.update_cell(i + 2, 3, cantidad_disponible)
+            sheet_inventario.update_cell(i + 2, 4, nuevo_estado)
             break
 
 # ==============================
-# CONFIGURACIÓN DE INTERFAZ
+# INTERFAZ PRINCIPAL
 # ==============================
 st.set_page_config(page_title="Gestión de Préstamos", layout="wide")
-st.title("Sistema de Préstamos de Inventario")
+
+st.sidebar.title("Menú de navegación")
+menu = st.sidebar.radio("Selecciona una opción:", [
+    "Inventario",
+    "Registrar préstamo",
+    "Registrar devolución",
+    "Historial"
+])
 
 inventario = pd.DataFrame(sheet_inventario.get_all_records())
-st.subheader("Inventario actual")
-st.dataframe(inventario)
 
 # ==============================
-# REGISTRAR PRÉSTAMO
+# OPCIÓN 1: INVENTARIO
 # ==============================
-st.subheader("Registrar préstamo")
+if menu == "Inventario":
+    st.title("Inventario actual")
 
-with st.form("prestamo_form"):
-    id_componente = st.text_input("ID del componente")
-    persona = st.text_input("Persona responsable del préstamo")
-    cantidad_prestamo = st.number_input("Cantidad a prestar", min_value=1, step=1)
-    fecha_prestamo = st.date_input("Fecha del préstamo")
-    observaciones = st.text_area("Observaciones (opcional)")
-    submit_prestamo = st.form_submit_button("Registrar préstamo")
+    # Campo de búsqueda
+    busqueda = st.text_input("Buscar componente por nombre o ID:")
 
-    if submit_prestamo:
-        if not id_componente or not persona:
-            st.error("Debes ingresar el ID y la persona responsable.")
+    # Filtrar por nombre o ID si hay búsqueda
+    if busqueda:
+        filtro = inventario[
+            inventario["Componente"].str.contains(busqueda, case=False, na=False) |
+            inventario["ID"].astype(str).str.contains(busqueda, case=False, na=False)
+        ]
+    else:
+        filtro = inventario
+
+    # Función para aplicar colores según el estado
+    def resaltar_estado(val):
+        if val == "Disponible":
+            color = "background-color: #d4edda; color: #155724;"   # Verde suave
+        elif val == "Parcialmente prestado":
+            color = "background-color: #fff3cd; color: #856404;"   # Amarillo suave
+        elif val == "No disponible":
+            color = "background-color: #f8d7da; color: #721c24;"   # Rojo suave
         else:
-            inventario = sheet_inventario.get_all_records()
-            fila = next((i for i, item in enumerate(inventario)
-                         if str(item["ID"]).strip().lower() == str(id_componente).strip().lower()), None)
+            color = ""
+        return color
 
-            if fila is not None:
-                disponible = int(inventario[fila]["Cantidad"])
-                estado = inventario[fila]["Estado"]
-                componente = inventario[fila]["Componente"]
+    # Aplicar estilo
+    if "Estado" in filtro.columns:
+        styled_df = filtro.style.applymap(resaltar_estado, subset=["Estado"])
+        st.dataframe(styled_df, use_container_width=True)
+    else:
+        st.dataframe(filtro, use_container_width=True)
 
-                if disponible <= 0:
-                    st.error("No hay unidades disponibles para préstamo.")
-                elif cantidad_prestamo > disponible:
-                    st.error(f"Solo hay {disponible} unidades disponibles.")
+
+# ==============================
+# OPCIÓN 2: REGISTRAR PRÉSTAMO
+# ==============================
+elif menu == "Registrar préstamo":
+    st.title("Registrar préstamo")
+    busqueda = st.text_input("🔍 Buscar componente (por nombre o ID):")
+    if busqueda:
+        coincidencias = inventario[inventario["Componente"].str.contains(busqueda, case=False, na=False) |
+                                   inventario["ID"].astype(str).str.contains(busqueda, case=False, na=False)]
+        st.dataframe(coincidencias)
+
+    with st.form("prestamo_form"):
+        id_componente = st.text_input("ID del componente")
+        persona = st.text_input("Persona responsable del préstamo")
+        cantidad_prestamo = st.number_input("Cantidad a prestar", min_value=1, step=1)
+        fecha_prestamo = st.date_input("Fecha del préstamo")
+        observaciones = st.text_area("Observaciones (opcional)")
+        submit_prestamo = st.form_submit_button("Registrar préstamo")
+
+        if submit_prestamo:
+            if not id_componente or not persona:
+                st.error("Debes ingresar el ID y la persona responsable.")
+            else:
+                inventario = sheet_inventario.get_all_records()
+                fila = next((i for i, item in enumerate(inventario)
+                            if str(item["ID"]).strip().lower() == str(id_componente).strip().lower()), None)
+
+                if fila is not None:
+                    disponible = int(inventario[fila]["Cantidad"])
+                    componente = inventario[fila]["Componente"]
+
+                    if disponible <= 0:
+                        st.error("No hay unidades disponibles para préstamo.")
+                    elif cantidad_prestamo > disponible:
+                        st.error(f"Solo hay {disponible} unidades disponibles.")
+                    else:
+                        sheet_historial.append_row([
+                            id_componente, componente, persona,
+                            "Préstamo", str(fecha_prestamo), cantidad_prestamo, observaciones
+                        ])
+                        st.success(f"Préstamo registrado para {componente} ({cantidad_prestamo} unidad/es)")
+                        actualizar_estado_y_cantidad(id_componente)
                 else:
-                    # Registrar préstamo en HISTORIAL
+                    st.error("No se encontró ese ID en el inventario.")
+
+# ==============================
+# OPCIÓN 3: REGISTRAR DEVOLUCIÓN
+# ==============================
+elif menu == "Registrar devolución":
+    st.title("Registrar devolución")
+    busqueda = st.text_input("🔍 Buscar componente (por nombre o ID):")
+    if busqueda:
+        coincidencias = inventario[inventario["Componente"].str.contains(busqueda, case=False, na=False) |
+                                   inventario["ID"].astype(str).str.contains(busqueda, case=False, na=False)]
+        st.dataframe(coincidencias)
+
+    with st.form("devolucion_form"):
+        id_devolucion = st.text_input("ID del componente a devolver")
+        persona_dev = st.text_input("Persona que devuelve el componente")
+        cantidad_dev = st.number_input("Cantidad a devolver", min_value=1, step=1)
+        fecha_devolucion = st.date_input("Fecha de devolución")
+        observaciones_dev = st.text_area("Observaciones (opcional)")
+        submit_devolucion = st.form_submit_button("Registrar devolución")
+
+        if submit_devolucion:
+            if not id_devolucion or not persona_dev:
+                st.error("Debes ingresar el ID y el nombre de quien devuelve.")
+            else:
+                historial = sheet_historial.get_all_records()
+                prestamos_activos = [
+                    h for h in historial
+                    if str(h["ID"]).strip().lower() == str(id_devolucion).strip().lower()
+                    and h["Acción"] == "Préstamo"
+                    and h["Persona"].strip().lower() == persona_dev.strip().lower()
+                ]
+
+                if not prestamos_activos:
+                    st.error("No se encontró un préstamo activo para esa persona e ID.")
+                else:
+                    componente = prestamos_activos[0]["Componente"]
                     sheet_historial.append_row([
-                        id_componente, componente, persona,
-                        "Préstamo", str(fecha_prestamo), cantidad_prestamo, observaciones
+                        id_devolucion, componente, persona_dev,
+                        "Devolución", str(fecha_devolucion), cantidad_dev, observaciones_dev
                     ])
-                    st.success(f"Préstamo registrado para {componente} ({cantidad_prestamo} unidad/es)")
-                    actualizar_estado_y_cantidad(id_componente)
-            else:
-                st.error("No se encontró ese ID en el inventario.")
+                    st.success(f"Devolución registrada para {componente} ({cantidad_dev} unidad/es)")
+                    actualizar_estado_y_cantidad(id_devolucion)
 
 # ==============================
-# REGISTRAR DEVOLUCIÓN
+# OPCIÓN 4: HISTORIAL
 # ==============================
-st.subheader("Registrar devolución")
+elif menu == "Historial":
+    st.title("Historial de préstamos y devoluciones")
+    historial = pd.DataFrame(sheet_historial.get_all_records())
+    st.dataframe(historial)
 
-with st.form("devolucion_form"):
-    id_devolucion = st.text_input("ID del componente a devolver")
-    persona_dev = st.text_input("Persona que devuelve el componente")
-    cantidad_dev = st.number_input("Cantidad a devolver", min_value=1, step=1)
-    fecha_devolucion = st.date_input("Fecha de devolución")
-    observaciones_dev = st.text_area("Observaciones (opcional)")
-    submit_devolucion = st.form_submit_button("Registrar devolución")
 
-    if submit_devolucion:
-        if not id_devolucion or not persona_dev:
-            st.error("Debes ingresar el ID y el nombre de quien devuelve.")
-        else:
-            historial = sheet_historial.get_all_records()
-            prestamos_activos = [
-                h for h in historial
-                if str(h["ID"]).strip().lower() == str(id_devolucion).strip().lower()
-                and h["Acción"] == "Préstamo"
-                and h["Persona"].strip().lower() == persona_dev.strip().lower()
-                and not any(
-                    d["Acción"] == "Devolución"
-                    and d["Persona"] == h["Persona"]
-                    and d["ID"] == h["ID"]
-                    for d in historial
-                )
-            ]
-
-            if not prestamos_activos:
-                st.error("No se encontró un préstamo activo para esa persona e ID.")
-            else:
-                componente = prestamos_activos[0]["Componente"]
-                # Registrar devolución
-                sheet_historial.append_row([
-                    id_devolucion, componente, persona_dev,
-                    "Devolución", str(fecha_devolucion), cantidad_dev, observaciones_dev
-                ])
-                st.success(f"Devolución registrada para {componente} ({cantidad_dev} unidad/es)")
-                actualizar_estado_y_cantidad(id_devolucion)
-
-# ==============================
-# MOSTRAR HISTORIAL
-# ==============================
-st.subheader("Historial de préstamos y devoluciones")
-historial = pd.DataFrame(sheet_historial.get_all_records())
-st.dataframe(historial)
 
 
 
