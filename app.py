@@ -248,11 +248,11 @@ def actualizar_estado_y_cantidad(id_componente):
 # ==============================
 st.set_page_config(page_title="Gestión de Préstamos", layout="wide")
 
-st.sidebar.title("Menú de navegación")
+st.sidebar.title("Menú de Navegación")
 menu = st.sidebar.radio("Selecciona una opción:", [
     "Inventario",
-    "Registrar préstamo",
-    "Registrar devolución",
+    "Registrar Préstamo",
+    "Registrar Devolución",
     "Historial"
 ])
 
@@ -262,7 +262,7 @@ inventario = pd.DataFrame(sheet_inventario.get_all_records())
 # OPCIÓN 1: INVENTARIO
 # ==============================
 if menu == "Inventario":
-    st.title("Inventario actual")
+    st.title("Inventario Actual")
 
     # Campo de búsqueda
     busqueda = st.text_input("Buscar componente por nombre o ID:")
@@ -299,9 +299,9 @@ if menu == "Inventario":
 # ==============================
 # OPCIÓN 2: REGISTRAR PRÉSTAMO
 # ==============================
-elif menu == "Registrar préstamo":
-    st.title("Registrar préstamo")
-    busqueda = st.text_input("🔍 Buscar componente (por nombre o ID):")
+elif menu == "Registrar Préstamo":
+    st.title("Registrar Préstamo")
+    busqueda = st.text_input("Buscar componente (por nombre o ID):")
     if busqueda:
         coincidencias = inventario[inventario["Componente"].str.contains(busqueda, case=False, na=False) |
                                    inventario["ID"].astype(str).str.contains(busqueda, case=False, na=False)]
@@ -344,9 +344,9 @@ elif menu == "Registrar préstamo":
 # ==============================
 # OPCIÓN 3: REGISTRAR DEVOLUCIÓN
 # ==============================
-elif menu == "Registrar devolución":
-    st.title("Registrar devolución")
-    busqueda = st.text_input("🔍 Buscar componente (por nombre o ID):")
+elif menu == "Registrar Devolución":
+    st.title("Registrar Devolución")
+    busqueda = st.text_input("Buscar componente (por nombre o ID):")
     if busqueda:
         coincidencias = inventario[inventario["Componente"].str.contains(busqueda, case=False, na=False) |
                                    inventario["ID"].astype(str).str.contains(busqueda, case=False, na=False)]
@@ -390,6 +390,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
