@@ -356,8 +356,10 @@ elif menu == "Registrar Devolución":
     st.title("Registrar Devolución")
     busqueda = st.text_input("Buscar componente (por nombre o ID):")
     if busqueda:
-        coincidencias = inventario[inventario["Componente"].str.contains(busqueda, case=False, na=False) |
-                                   inventario["ID"].astype(str).str.contains(busqueda, case=False, na=False)]
+        coincidencias = inventario[
+            inventario["Componente"].str.contains(busqueda, case=False, na=False) |
+            inventario["ID"].astype(str).str.contains(busqueda, case=False, na=False)
+        ]
         st.dataframe(coincidencias)
 
     with st.form("devolucion_form"):
@@ -370,26 +372,54 @@ elif menu == "Registrar Devolución":
 
         if submit_devolucion:
             if not id_devolucion or not persona_dev:
-                st.error("Debes ingresar el ID y el nombre de quien devuelve.")
-            else:
-                historial = sheet_historial.get_all_records()
-                prestamos_activos = [
-                    h for h in historial
-                    if str(h["ID"]).strip().lower() == str(id_devolucion).strip().lower()
-                    and h["Acción"] == "Préstamo"
-                    and h["Persona"].strip().lower() == persona_dev.strip().lower()
-                ]
+                st.error("Debes ingresar el ID y la persona.")
+                st.stop()
 
-                if not prestamos_activos:
-                    st.error("No se encontró un préstamo activo para esa persona e ID.")
-                else:
-                    componente = prestamos_activos[0]["Componente"]
-                    sheet_historial.append_row([
-                        id_devolucion, componente, persona_dev,
-                        "Devolución", str(fecha_devolucion), cantidad_dev, observaciones_dev
-                    ])
-                    st.success(f"Devolución registrada para {componente} ({cantidad_dev} unidad/es)")
-                    actualizar_estado_y_cantidad(id_devolucion)
+            historial = sheet_historial.get_all_records()
+
+            # Cantidad prestada por esa persona
+            total_prestado = sum(
+                int(h["Cantidad"])
+                for h in historial
+                if str(h["ID"]).lower() == str(id_devolucion).lower()
+                and h["Acción"].lower() == "préstamo"
+                and h["Persona"].strip().lower() == persona_dev.strip().lower()
+            )
+
+            # Cantidad devuelta por esa persona
+            total_devuelto = sum(
+                int(h["Cantidad"])
+                for h in historial
+                if str(h["ID"]).lower() == str(id_devolucion).lower()
+                and h["Acción"].lower() == "devolución"
+                and h["Persona"].strip().lower() == persona_dev.strip().lower()
+            )
+
+            pendiente = total_prestado - total_devuelto
+
+            if pendiente <= 0:
+                st.error("Esta persona no tiene préstamos pendientes para este ID.")
+                st.stop()
+
+            if cantidad_dev > pendiente:
+                st.error(f"Solo puede devolver {pendiente} unidades.")
+                st.stop()
+
+            # Obtener nombre del componente
+            comp = next(
+                (item["Componente"] for item in historial if item["ID"] == id_devolucion),
+                "Desconocido"
+            )
+
+            # Registrar devolución
+            sheet_historial.append_row([
+                id_devolucion, comp, persona_dev,
+                "Devolución", str(fecha_devolucion), cantidad_dev, observaciones_dev
+            ])
+
+            st.success(f"Devolución registrada ({cantidad_dev} unidad/es).")
+            actualizar_estado_y_cantidad(id_devolucion)
+
 
 # ==============================
 # OPCIÓN 4: HISTORIAL
@@ -398,6 +428,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
