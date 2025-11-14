@@ -207,48 +207,55 @@ sheet_historial = spreadsheet.worksheet("HISTORIAL")
 # FUNCIONES AUXILIARES
 # ==============================
 def actualizar_estado_y_cantidad(id_componente):
-    """Actualiza cantidad disponible y estado del componente basándose en sumatoria real."""
+    """Actualiza la columna 'Disponible' y 'Estado' sin tocar la cantidad total."""
     inventario = sheet_inventario.get_all_records()
     historial = sheet_historial.get_all_records()
 
     for i, item in enumerate(inventario):
         if str(item["ID"]).strip().lower() == str(id_componente).strip().lower():
 
+            # CANTIDAD TOTAL (NO SE MODIFICA)
             total = int(item["Cantidad"])
 
-            # SUMA TOTAL DE PRÉSTAMOS
+            # SUMA PRESTAMOS
             total_prestamos = sum(
-                int(h.get("Cantidad", 0) or 0)
+                int(h["Cantidad"])
                 for h in historial
-                if str(h["ID"]).strip().lower() == str(id_componente).strip().lower()
+                if str(h["ID"]).lower() == str(id_componente).lower()
                 and h["Acción"].lower() == "préstamo"
             )
 
-            # SUMA TOTAL DE DEVOLUCIONES
+            # SUMA DEVOLUCIONES
             total_devoluciones = sum(
-                int(h.get("Cantidad", 0) or 0)
+                int(h["Cantidad"])
                 for h in historial
-                if str(h["ID"]).strip().lower() == str(id_componente).strip().lower()
+                if str(h["ID"]).lower() == str(id_componente).lower()
                 and h["Acción"].lower() == "devolución"
             )
 
-            # Préstamos activos reales
+            # PRESTADO ACTIVO
             prestado_activo = max(total_prestamos - total_devoluciones, 0)
 
-            # Disponibles reales
-            cantidad_disponible = max(total - prestado_activo, 0)
+            # DISPONIBLE
+            disponible = total - prestado_activo
 
-            # Estado
-            if prestado_activo == 0:
+            # ESTADO
+            if disponible == total:
                 estado = "Disponible"
-            elif prestado_activo < total:
+            elif disponible > 0:
                 estado = "Parcialmente prestado"
             else:
                 estado = "No disponible"
 
-            # Actualizar hoja INVENTARIO
-            sheet_inventario.update_cell(i + 2, 4, estado)
+            # ACTUALIZAR HOJA
+            # Col 4 = Disponible
+            sheet_inventario.update_cell(i + 2, 4, disponible)
+
+            # Col 5 = Estado
+            sheet_inventario.update_cell(i + 2, 5, estado)
+
             break
+
 
 # ==============================
 # INTERFAZ PRINCIPAL
@@ -427,6 +434,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
