@@ -411,9 +411,17 @@ elif menu == "Registrar Devolución":
                 st.error(f"Solo puede devolver {pendiente} unidades.")
                 st.stop()
 
-            # Obtener nombre del componente
+            
+           
+            # Obtener nombre del componente desde el PRÉSTAMO original
             comp = next(
-                (item["Componente"] for item in historial if item["ID"] == id_devolucion),
+                (
+                    h["Componente"]
+                    for h in historial
+                    if str(h["ID"]).strip().lower() == str(id_devolucion).strip().lower()
+                    and h["Acción"].lower() == "préstamo"
+                    and h.get("Componente")
+                ),
                 "Desconocido"
             )
 
@@ -434,6 +442,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
