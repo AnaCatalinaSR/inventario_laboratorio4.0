@@ -247,7 +247,6 @@ def actualizar_estado_y_cantidad(id_componente):
                 estado = "No disponible"
 
             # Actualizar hoja INVENTARIO
-            sheet_inventario.update_cell(i + 2, 3, cantidad_disponible)
             sheet_inventario.update_cell(i + 2, 4, estado)
             break
 
@@ -428,6 +427,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
