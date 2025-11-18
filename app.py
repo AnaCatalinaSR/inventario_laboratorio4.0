@@ -211,54 +211,85 @@ elif menu == "Registrar Préstamo":
 elif menu == "Registrar Devolución":
     st.title("Registrar Devolución")
 
-    busqueda = st.text_input("Buscar componente:")
+    busqueda = st.text_input("Buscar componente (por nombre o ID):")
 
     if busqueda:
-        st.dataframe(
-            inventario_df[
-                inventario_df["Componente"].str.contains(busqueda, case=False, na=False) |
-                inventario_df["ID"].astype(str).str.contains(busqueda, case=False, na=False)
-            ]
-        )
+        # Buscar coincidencias en el inventario
+        coincidencias = inventario[
+            inventario["Componente"].str.contains(busqueda, case=False, na=False)
+            | inventario["ID"].astype(str).str.contains(busqueda, na=False)
+        ]
 
-    id_dev = st.text_input("ID del componente")
-    persona = st.text_input("Persona que devuelve")
-    cantidad = st.number_input("Cantidad", min_value=1)
-    fecha = st.date_input("Fecha de devolución")
-    obs = st.text_area("Observaciones")
-
-    if st.button("Registrar devolución"):
-
-        historial = sheet_historial.get_all_records()
-
-        total_prestado = sum(
-            int(h["Cantidad"]) for h in historial
-            if h["ID"] == id_dev and h["Acción"] == "Préstamo"
-        )
-
-        total_devuelto = sum(
-            int(h["Cantidad"]) for h in historial
-            if h["ID"] == id_dev and h["Acción"] == "Devolución"
-        )
-
-        pendiente = total_prestado - total_devuelto
-
-        if pendiente <= 0:
-            st.error("No hay préstamos pendientes.")
-        elif cantidad > pendiente:
-            st.error(f"Solo puede devolver {pendiente}.")
+        if coincidencias.empty:
+            st.warning("No se encontraron componentes.")
         else:
-            comp = next(
-                (h["Componente"] for h in historial if h["ID"] == id_dev), "Desconocido"
-            )
+            componente = coincidencias.iloc[0]
 
-            sheet_historial.append_row([
-                id_dev, comp, persona, "Devolución",
-                str(fecha), cantidad, obs
-            ])
+            st.subheader(f"Componente seleccionado: **{componente['Componente']}**")
 
-            actualizar_estado_y_cantidad(id_dev)
-            st.success("Devolución registrada.")
+            # 🔍 Verificar si es un KIT en la hoja KITS
+            kits_de_este = kits[kits["ID Inventario"] == componente["ID"]]
+
+            if not kits_de_este.empty:
+                st.info("Este componente es un **KIT**. Selecciona cuál quieres devolver.")
+
+                # Kits actualmente prestados
+                kits_prestados = kits_de_este[kits_de_este["Estado"] == "Prestado"]
+
+                if kits_prestados.empty:
+                    st.warning("Ningún kit de este componente está prestado actualmente.")
+                else:
+                    # Selección de número de kit para devolver
+                    kit_elegido = st.selectbox(
+                        "Selecciona el número de kit a devolver:",
+                        kits_prestados["Número Kit"].tolist()
+                    )
+
+                    observacion = st.text_area("Observación (opcional):")
+
+                    if st.button("Registrar Devolución del KIT"):
+                        idx = kits_prestados[kits_prestados["Número Kit"] == kit_elegido].index[0]
+
+                        # Actualizar estado en la hoja KITS
+                        sheets.update_cell("KITS", idx + 2, kits.columns.get_loc("Estado") + 1, "Disponible")
+                        sheets.update_cell("KITS", idx + 2, kits.columns.get_loc("Observación") + 1, observacion)
+
+                        # Registrar la devolución en historial
+                        nuevo_registro = pd.DataFrame([{
+                            "Tipo": "Devolución KIT",
+                            "Componente": componente["Componente"],
+                            "Número Kit": kit_elegido,
+                            "Fecha": str(date.today()),
+                            "Observación": observacion
+                        }])
+                        historial = pd.concat([historial, nuevo_registro], ignore_index=True)
+                        save_to_sheet("HISTORIAL", historial)
+
+                        st.success(f"Kit #{kit_elegido} devuelto correctamente.")
+            else:
+                # ⚙️ Devolución normal (no es un kit)
+                st.info("Este componente NO es un kit. Procesando devolución normal.")
+
+                cantidad = st.number_input("Cantidad a devolver:", min_value=1, step=1)
+                observacion = st.text_area("Observación (opcional):")
+
+                if st.button("Registrar Devolución"):
+                    nuevo_total = componente["Cantidad"] + cantidad
+
+                    inventario.loc[componente.name, "Cantidad"] = nuevo_total
+                    save_to_sheet("INVENTARIO", inventario)
+
+                    nuevo_registro = pd.DataFrame([{
+                        "Tipo": "Devolución",
+                        "Componente": componente["Componente"],
+                        "Cantidad": cantidad,
+                        "Fecha": str(date.today()),
+                        "Observación": observacion
+                    }])
+                    historial = pd.concat([historial, nuevo_registro], ignore_index=True)
+                    save_to_sheet("HISTORIAL", historial)
+
+                    st.success("Devolución registrada correctamente.")
 
 # ==============================
 # 4. HISTORIAL
@@ -273,6 +304,7 @@ elif menu == "Historial":
 elif menu == "Kits":
     st.title("Listado de KITS")
     st.dataframe(kits_df, use_container_width=True)
+
 
 
 
