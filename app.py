@@ -55,30 +55,28 @@ spreadsheet = client.open("INVENTARIO")
 
 sheet_inventario = spreadsheet.worksheet("INVENTARIO")
 sheet_historial = spreadsheet.worksheet("HISTORIAL")
-sheet_kits = spreadsheet.worksheet("KITS")  # ← NUEVA HOJA
+sheet_kits = spreadsheet.worksheet("KITS")
 
 # ==============================
-# FUNCIONES AUXILIARES
+# FUNCIÓN AUXILIAR
 # ==============================
 def actualizar_estado_y_cantidad(id_componente):
     inventario = sheet_inventario.get_all_records()
     historial = sheet_historial.get_all_records()
 
     for i, item in enumerate(inventario):
-        if str(item["ID"]).strip().lower() == str(id_componente).strip().lower():
+        if str(item["ID"]).lower() == str(id_componente).lower():
 
             total = int(item["Cantidad"])
 
             total_prestamos = sum(
                 int(h["Cantidad"]) for h in historial
-                if str(h["ID"]).lower() == str(id_componente).lower()
-                and h["Acción"].lower() == "préstamo"
+                if h["ID"] == id_componente and h["Acción"] == "Préstamo"
             )
 
             total_devoluciones = sum(
                 int(h["Cantidad"]) for h in historial
-                if str(h["ID"]).lower() == str(id_componente).lower()
-                and h["Acción"].lower() == "devolución"
+                if h["ID"] == id_componente and h["Acción"] == "Devolución"
             )
 
             prestado_activo = max(total_prestamos - total_devoluciones, 0)
@@ -104,25 +102,27 @@ menu = st.sidebar.radio("Selecciona una opción:", [
     "Registrar Préstamo",
     "Registrar Devolución",
     "Historial",
-    "Kits"      # ← NUEVA OPCIÓN DE MENÚ
+    "Kits"
 ])
 
-inventario = pd.DataFrame(sheet_inventario.get_all_records())
+inventario_df = pd.DataFrame(sheet_inventario.get_all_records())
+kits_df = pd.DataFrame(sheet_kits.get_all_records())
 
 # ==============================
 # 1. INVENTARIO
 # ==============================
 if menu == "Inventario":
     st.title("Inventario Actual")
+
     busqueda = st.text_input("Buscar componente por nombre o ID:")
 
     if busqueda:
-        filtro = inventario[
-            inventario["Componente"].str.contains(busqueda, case=False, na=False) |
-            inventario["ID"].astype(str).str.contains(busqueda, case=False, na=False)
+        filtro = inventario_df[
+            inventario_df["Componente"].str.contains(busqueda, case=False, na=False) |
+            inventario_df["ID"].astype(str).str.contains(busqueda, case=False, na=False)
         ]
     else:
-        filtro = inventario
+        filtro = inventario_df
 
     st.dataframe(filtro, use_container_width=True)
 
@@ -130,46 +130,80 @@ if menu == "Inventario":
 # 2. REGISTRAR PRÉSTAMO
 # ==============================
 elif menu == "Registrar Préstamo":
+
     st.title("Registrar Préstamo")
 
-    busqueda = st.text_input("Buscar componente (por nombre o ID):")
+    inventario = pd.DataFrame(sheet_inventario.get_all_records())
+    kits = pd.DataFrame(sheet_kits.get_all_records())
+
+    busqueda = st.text_input("Buscar componente por nombre o ID:")
+
     if busqueda:
         coincidencias = inventario[
-            inventario["Componente"].str.contains(busqueda, case=False, na=False) |
-            inventario["ID"].astype(str).str.contains(busqueda, case=False, na=False)
+            inventario["ID"].astype(str).str.contains(busqueda, case=False) |
+            inventario["Componente"].astype(str).str.contains(busqueda, case=False)
         ]
-        st.dataframe(coincidencias)
+    else:
+        coincidencias = pd.DataFrame()
 
-    with st.form("prestamo_form"):
-        id_componente = st.text_input("ID del componente")
-        persona = st.text_input("Persona responsable del préstamo")
-        cantidad_prestamo = st.number_input("Cantidad a prestar", min_value=1)
-        fecha_prestamo = st.date_input("Fecha del préstamo")
-        obs = st.text_area("Observaciones (opcional)")
-        submit = st.form_submit_button("Registrar préstamo")
+    if len(coincidencias) > 0:
 
-        if submit:
-            inventario = sheet_inventario.get_all_records()
+        seleccionado = st.selectbox(
+            "Seleccione un componente:",
+            coincidencias["Componente"] + " (ID: " + coincidencias["ID"].astype(str) + ")"
+        )
 
-            fila = next(
-                (i for i, item in enumerate(inventario)
-                 if str(item["ID"]).lower() == id_componente.lower()), None)
+        id_real = seleccionado.split("ID: ")[1].replace(")", "")
 
-            if fila is None:
-                st.error("ID no encontrado en inventario.")
+        # Verificar si es un kit
+        kits_relacionados = kits[kits["ID Inventario"].astype(str) == str(id_real)]
+        es_kit = len(kits_relacionados) > 0
+
+        if es_kit:
+            st.subheader("Este componente es un KIT")
+
+            kits_disponibles = kits_relacionados[kits_relacionados["Estado"] == "Disponible"]
+
+            if len(kits_disponibles) == 0:
+                st.error("No hay kits disponibles.")
             else:
-                disponible = int(inventario[fila]["Cantidad"])
-                componente = inventario[fila]["Componente"]
+                numero_kit = st.selectbox(
+                    "Seleccione el número de kit disponible:",
+                    kits_disponibles["Número Kit"].astype(str)
+                )
 
-                if cantidad_prestamo > disponible:
-                    st.error(f"Solo hay {disponible} unidades.")
-                else:
-                    sheet_historial.append_row([
-                        id_componente, componente, persona, "Préstamo",
-                        str(fecha_prestamo), cantidad_prestamo, obs
-                    ])
-                    actualizar_estado_y_cantidad(id_componente)
-                    st.success("Préstamo registrado correctamente.")
+                info_kit = kits_disponibles[kits_disponibles["Número Kit"].astype(str) == numero_kit].iloc[0]
+                st.write("Observación:", info_kit["Observación"])
+                st.write("QR:", info_kit["QR"])
+
+        else:
+            st.info("Este componente NO es un Kit.")
+
+        nombre = st.text_input("Nombre de quien realiza el préstamo")
+        cantidad = st.number_input("Cantidad", min_value=1, step=1)
+
+        if st.button("Registrar Préstamo"):
+
+            registro = {
+                "ID": id_real,
+                "Componente": seleccionado,
+                "Persona": nombre,
+                "Acción": "Préstamo",
+                "Fecha": str(datetime.now().date()),
+                "Cantidad": cantidad,
+                "Obs": "",
+            }
+
+            if es_kit:
+                registro["Número Kit"] = numero_kit
+                fila_kit = kits_relacionados[
+                    kits_relacionados["Número Kit"].astype(str) == numero_kit
+                ].index[0] + 2
+                sheet_kits.update_cell(fila_kit, kits.columns.get_loc("Estado") + 1, "Prestado")
+
+            sheet_historial.append_row(list(registro.values()))
+            actualizar_estado_y_cantidad(id_real)
+            st.success("Préstamo registrado correctamente.")
 
 # ==============================
 # 3. REGISTRAR DEVOLUCIÓN
@@ -177,83 +211,69 @@ elif menu == "Registrar Préstamo":
 elif menu == "Registrar Devolución":
     st.title("Registrar Devolución")
 
-    busqueda = st.text_input("Buscar componente (por nombre o ID):")
+    busqueda = st.text_input("Buscar componente:")
+
     if busqueda:
         st.dataframe(
-            inventario[
-                inventario["Componente"].str.contains(busqueda, case=False, na=False) |
-                inventario["ID"].astype(str).str.contains(busqueda, case=False, na=False)
+            inventario_df[
+                inventario_df["Componente"].str.contains(busqueda, case=False, na=False) |
+                inventario_df["ID"].astype(str).str.contains(busqueda, case=False, na=False)
             ]
         )
 
-    with st.form("devolucion_form"):
-        id_dev = st.text_input("ID del componente")
-        persona = st.text_input("Persona que devuelve")
-        cantidad = st.number_input("Cantidad devuelta", min_value=1)
-        fecha = st.date_input("Fecha de devolución")
-        obs = st.text_area("Observaciones (opcional)")
-        submit = st.form_submit_button("Registrar devolución")
+    id_dev = st.text_input("ID del componente")
+    persona = st.text_input("Persona que devuelve")
+    cantidad = st.number_input("Cantidad", min_value=1)
+    fecha = st.date_input("Fecha de devolución")
+    obs = st.text_area("Observaciones")
 
-        if submit:
-            historial = sheet_historial.get_all_records()
+    if st.button("Registrar devolución"):
 
-            total_prestado = sum(
-                int(h["Cantidad"]) for h in historial
-                if h["ID"] == id_dev and h["Acción"] == "Préstamo" and h["Persona"].lower() == persona.lower()
+        historial = sheet_historial.get_all_records()
+
+        total_prestado = sum(
+            int(h["Cantidad"]) for h in historial
+            if h["ID"] == id_dev and h["Acción"] == "Préstamo"
+        )
+
+        total_devuelto = sum(
+            int(h["Cantidad"]) for h in historial
+            if h["ID"] == id_dev and h["Acción"] == "Devolución"
+        )
+
+        pendiente = total_prestado - total_devuelto
+
+        if pendiente <= 0:
+            st.error("No hay préstamos pendientes.")
+        elif cantidad > pendiente:
+            st.error(f"Solo puede devolver {pendiente}.")
+        else:
+            comp = next(
+                (h["Componente"] for h in historial if h["ID"] == id_dev), "Desconocido"
             )
 
-            total_devuelto = sum(
-                int(h["Cantidad"]) for h in historial
-                if h["ID"] == id_dev and h["Acción"] == "Devolución" and h["Persona"].lower() == persona.lower()
-            )
+            sheet_historial.append_row([
+                id_dev, comp, persona, "Devolución",
+                str(fecha), cantidad, obs
+            ])
 
-            pendiente = total_prestado - total_devuelto
-
-            if pendiente <= 0:
-                st.error("No hay préstamos pendientes para esta persona.")
-            elif cantidad > pendiente:
-                st.error(f"Solo puede devolver {pendiente}.")
-            else:
-                comp = next(
-                    (h["Componente"] for h in historial
-                     if h["ID"] == id_dev and h["Acción"] == "Préstamo"),
-                    "Desconocido"
-                )
-
-                sheet_historial.append_row([
-                    id_dev, comp, persona, "Devolución",
-                    str(fecha), cantidad, obs
-                ])
-
-                actualizar_estado_y_cantidad(id_dev)
-                st.success("Devolución registrada.")
+            actualizar_estado_y_cantidad(id_dev)
+            st.success("Devolución registrada.")
 
 # ==============================
 # 4. HISTORIAL
 # ==============================
 elif menu == "Historial":
-    st.title("Historial")
+    st.title("Historial Completo")
     st.dataframe(pd.DataFrame(sheet_historial.get_all_records()), use_container_width=True)
 
 # ==============================
-# 5. KITS  ← NUEVA SECCIÓN
+# 5. KITS
 # ==============================
 elif menu == "Kits":
-    st.title("Kits disponibles")
+    st.title("Listado de KITS")
+    st.dataframe(kits_df, use_container_width=True)
 
-    kits_df = pd.DataFrame(sheet_kits.get_all_records())
-
-    busqueda = st.text_input("Buscar kit por nombre o ID:")
-
-    if busqueda:
-        filtro = kits_df[
-            kits_df["KIT"].str.contains(busqueda, case=False, na=False) |
-            kits_df["ID"].astype(str).str.contains(busqueda, case=False, na=False)
-        ]
-    else:
-        filtro = kits_df
-
-    st.dataframe(filtro, use_container_width=True)
 
 
 
