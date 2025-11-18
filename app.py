@@ -7,7 +7,10 @@ import json
 from PIL import Image
 import streamlit as st
 import os
+
 #color pagina
+st.markdown("""
+<style>
 
 /* Contenedor principal */
 .main-container {
@@ -30,7 +33,7 @@ import os
     font-size: 2.3rem;
     font-weight: bold;
     color: #000; /* Negro */
-    text-shadow: 1px 1px #e6e6e6; /* Sombra suave */
+    text-shadow: 1px 1px #e6e6e6;
     border-bottom: 3px solid #ffd84d; /* Línea amarilla */
     display: inline-block;
     padding-bottom: 5px;
@@ -41,7 +44,7 @@ import os
     width: 100%;
     padding: 10px;
     margin-bottom: 20px;
-    border: 2px solid #8ecaff; /* Azul claro */
+    border: 2px solid #8ecaff;
     border-radius: 8px;
     font-size: 1.1rem;
     color: #000;
@@ -49,7 +52,7 @@ import os
 }
 
 .search-bar input:focus {
-    border-color: #ffd84d; /* Amarillo */
+    border-color: #ffd84d;
     outline: none;
 }
 
@@ -59,18 +62,18 @@ import os
     justify-content: space-between;
     padding: 15px;
     margin-bottom: 15px;
-    background-color: #e9f4ff; /* Azul súper claro */
-    border-left: 6px solid #ffd84d; /* Línea amarilla */
+    background-color: #e9f4ff;
+    border-left: 6px solid #ffd84d;
     border-radius: 8px;
     color: #000;
 }
 
 /* Botón principal */
 .btn-primary {
-    background-color: #8ecaff; /* Azul claro */
-    color: #000; /* Negro */
+    background-color: #8ecaff;
+    color: #000;
     padding: 10px 20px;
-    border: 2px solid #ffd84d; /* Acento amarillo */
+    border: 2px solid #ffd84d;
     border-radius: 8px;
     font-size: 1rem;
     cursor: pointer;
@@ -78,10 +81,14 @@ import os
 }
 
 .btn-primary:hover {
-    background-color: #d5ecff; /* Azul más claro */
-    border-color: #ffcc24; /* Amarillo más intenso */
+    background-color: #d5ecff;
+    border-color: #ffcc24;
 }
 
+</style>
+""",
+unsafe_allow_html=True
+)
 
 # --- Configurar logo ---
 logo_path = "logo-intep.png"
@@ -348,6 +355,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
