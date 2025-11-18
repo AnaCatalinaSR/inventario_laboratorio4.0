@@ -9,63 +9,77 @@ import streamlit as st
 import os
 #color pagina
 
-/* Estilo para el contenedor principal */
+/* Contenedor principal */
 .main-container {
     max-width: 1000px;
     margin: 0 auto;
     padding: 20px;
-    background-color: #f0f4f8;
+    background-color: #f5faff; /* Azul muy claro */
     border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+    color: #000; /* Texto negro */
 }
 
-/* Estilo para el encabezado */
+/* Encabezado */
 .header {
     text-align: center;
     margin-bottom: 30px;
 }
 
 .header h2 {
-    font-size: 2.5rem;
+    font-size: 2.3rem;
     font-weight: bold;
-    color: #1e3a8a; /* Azul oscuro */
-    text-shadow: 2px 2px #bfdbfe; /* Azul claro */
+    color: #000; /* Negro */
+    text-shadow: 1px 1px #e6e6e6; /* Sombra suave */
+    border-bottom: 3px solid #ffd84d; /* Línea amarilla */
+    display: inline-block;
+    padding-bottom: 5px;
 }
 
-/* Estilo para la barra de búsqueda */
+/* Barra de búsqueda */
 .search-bar input {
     width: 100%;
     padding: 10px;
     margin-bottom: 20px;
-    border: 2px solid #3b82f6; /* Azul */
+    border: 2px solid #8ecaff; /* Azul claro */
     border-radius: 8px;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+    color: #000;
+    background-color: #ffffff;
 }
 
-/* Estilo para los elementos de inventario */
+.search-bar input:focus {
+    border-color: #ffd84d; /* Amarillo */
+    outline: none;
+}
+
+/* Items del inventario */
 .inventory-item {
     display: flex;
     justify-content: space-between;
     padding: 15px;
     margin-bottom: 15px;
-    background-color: #e0f2fe; /* Azul súper claro */
-    border-left: 5px solid #3b82f6; /* Azul */
+    background-color: #e9f4ff; /* Azul súper claro */
+    border-left: 6px solid #ffd84d; /* Línea amarilla */
     border-radius: 8px;
+    color: #000;
 }
 
-/* Estilo para los botones */
+/* Botón principal */
 .btn-primary {
-    background-color: #3b82f6; /* Azul */
-    color: white;
+    background-color: #8ecaff; /* Azul claro */
+    color: #000; /* Negro */
     padding: 10px 20px;
-    border: none;
+    border: 2px solid #ffd84d; /* Acento amarillo */
     border-radius: 8px;
     font-size: 1rem;
     cursor: pointer;
+    font-weight: 600;
 }
 
 .btn-primary:hover {
-    background-color: #1e3a8a; /* Azul oscuro */
+    background-color: #d5ecff; /* Azul más claro */
+    border-color: #ffcc24; /* Amarillo más intenso */
 }
 
 
@@ -334,6 +348,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
