@@ -13,66 +13,81 @@ st.markdown("""
 <style>
 
 :root {
-    --amarillo-principal: #ffdd00;     /* Ahora reemplaza al azul */
-    --amarillo-secundario: #ffea66;    /* Amarillo claro */
-    --azul-principal: #003366;         /* Nuevo color para textos menú */
-    --azul-resaltado: #0055aa;         /* Azul para hover */
-    --azul-claro: #e8f1ff;             /* Azul suave para fondos */
+    /* ANTES: azul → AHORA: amarillo */
+    --azul-principal: #ffdd00;        /* reemplazo del azul fuerte */
+    --azul-secundario: #ffea66;       /* reemplazo del azul medio */
+    --azul-claro: #fff9cc;            /* reemplazo del azul claro */
+
+    /* ANTES: blanco → igual */
     --blanco: #ffffff;
-    --negro: #000000;
+
+    /* ANTES: gris suave → igual */
+    --gris-suave: #f7f9fc;
+
+    /* Texto igual */
+    --texto-oscuro: #1a1a1a;
+
+    /* AHORA: los lugares donde había amarillo usan azul */
+    --amarillo-antes: #004080;   /* azul fuerte */
+    --amarillo-suave: #0066cc;   /* azul suave */
+    --amarillo-claro: #e9f1fb;   /* azul clarito */
 }
 
 /* ===== FONDO GENERAL ===== */
 [data-testid="stAppViewContainer"] {
-    background-color: var(--blanco);
-    color: var(--negro);
+    background-color: var(--gris-suave);
+    color: var(--texto-oscuro);
 }
 
 /* ======= BARRA SUPERIOR ======= */
 header[data-testid="stHeader"] {
-    background-color: var(--amarillo-principal) !important; /* Antes azul → ahora amarillo */
-    color: var(--negro) !important;
-    border-bottom: 3px solid var(--azul-principal); /* Antes amarillo → ahora azul */
+    background-color: var(--azul-claro) !important;   /* era azul → ahora amarillo claro */
+    color: var(--amarillo-antes) !important;          /* era azul texto → ahora azul fuerte */
+    border-bottom: 2px solid var(--amarillo-claro);   /* antes azul suave → ahora azul claro */
 }
 
 /* Iconos del header */
 header[data-testid="stHeader"] svg {
-    fill: var(--negro) !important;
+    fill: var(--amarillo-antes) !important;
+}
+
+/* Texto del header */
+header[data-testid="stHeader"] * {
+    color: var(--amarillo-antes) !important;
 }
 
 /* ===== SIDEBAR ===== */
 [data-testid="stSidebar"] {
-    background-color: var(--amarillo-principal); /* Antes azul → ahora amarillo */
-    border-right: 3px solid var(--azul-principal);
+    background-color: var(--blanco);
+    border-right: 2px solid var(--azul-claro); /* antes azul → ahora amarillo claro */
 }
-
-/* Texto del menú ahora azul oscuro */
 [data-testid="stSidebar"] * {
-    color: var(--azul-principal) !important; 
-    font-weight: 600;
+    color: var(--amarillo-antes) !important;  /* letra menú azul oscuro */
+    font-weight: 500;
 }
 
 [data-testid="stSidebarNav"] a:hover {
-    color: var(--azul-resaltado) !important;
+    color: var(--amarillo-suave) !important;
 }
 
 /* ===== TITULOS ===== */
 h1, h2, h3, h4, h5 {
-    color: var(--amarillo-principal) !important; /* Antes azul → amarillo */
+    color: var(--azul-principal) !important; /* antes azul → ahora amarillo */
+    font-family: "Segoe UI", Roboto, sans-serif;
 }
 
 /* ===== BOTONES ===== */
 div.stButton > button {
-    background-color: var(--amarillo-principal); /* Era azul */
-    color: var(--negro);
+    background-color: var(--azul-principal);   /* antes azul → ahora amarillo */
+    color: var(--blanco);
     border: none;
     border-radius: 8px;
     font-weight: 600;
     transition: all 0.2s ease;
 }
 div.stButton > button:hover {
-    background-color: var(--azul-principal); /* Era amarillo */
-    color: var(--blanco);
+    background-color: var(--amarillo-antes);   /* antes amarillo → ahora azul fuerte */
+    transform: translateY(-2px);
 }
 
 /* ===== TABLAS ===== */
@@ -81,16 +96,16 @@ div.stButton > button:hover {
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     padding: 8px;
-    color: var(--negro);
+    color: var(--texto-oscuro);
 }
 
 /* ===== FORMULARIOS ===== */
 .stForm {
-    background: var(--azul-claro);   /* Donde era amarillo suave → ahora azul suave */
-    border-radius: 12px;
+    background: var(--amarillo-claro);  /* era azul → ahora azul clarito */
+    border-radius: 10px;
     padding: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    color: var(--negro);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    color: var(--texto-oscuro);
 }
 
 /* ===== INPUTS ===== */
@@ -98,21 +113,26 @@ div.stButton > button:hover {
 .stNumberInput > div > input,
 .stTextArea > div > textarea,
 .stDateInput > div > input {
-    border: 1px solid var(--amarillo-principal);  /* Antes azul → amarillo */
+    border: 1px solid var(--azul-principal);  /* antes azul → ahora amarillo */
     border-radius: 6px;
     background: var(--blanco);
-    color: var(--negro);
+    color: var(--texto-oscuro);
 }
+
 .stTextInput > div > div > input:focus,
 .stNumberInput > div > input:focus,
 .stTextArea > div > textarea:focus,
 .stDateInput > div > input:focus {
     outline: none;
-    border: 2px solid var(--azul-principal); /* Antes amarillo → azul */
-    box-shadow: 0 0 5px rgba(0,51,102,0.5);
+    border: 1.5px solid var(--amarillo-antes);  /* antes amarillo → ahora azul */
+    box-shadow: 0 0 4px rgba(0,64,128,0.2);
 }
 
 /* ===== MENSAJES ===== */
+.stAlert {
+    border-radius: 8px;
+}
+
 [data-testid="stSuccess"] {
     background-color: #e6f4ea;
     color: #1a6333;
@@ -126,56 +146,14 @@ div.stButton > button:hover {
     color: #8a6d1d;
 }
 
-/* ===== TABLAS AG-GRID ===== */
-.ag-theme-streamlit-light {
-    --ag-background-color: #ffffff !important;
-    --ag-odd-row-background-color: var(--azul-claro) !important; /* antes amarillo → azul */
-    --ag-header-background-color: var(--amarillo-principal) !important; 
-    --ag-header-foreground-color: #000000 !important;
-    --ag-foreground-color: #000000 !important;
-    --ag-border-color: var(--azul-principal) !important;
-    --ag-font-size: 14px;
+/* ===== ENLACES ===== */
+a, p, label, span {
+    color: var(--texto-oscuro) !important;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-
-
-
-#color tablas
-st.markdown("""
-<style>
-
-/* === FORZAR MODO CLARO EN DATAFRAME === */
-.ag-theme-streamlit-dark {
-    --ag-background-color: #e9f1fb !important;
-    --ag-odd-row-background-color: #f3f7ff !important;
-    --ag-header-background-color: #004080 !important;
-    --ag-header-foreground-color: #ffffff !important;
-    --ag-foreground-color: #1a1a1a !important;
-    --ag-border-color: #c5d9f2 !important;
-    --ag-font-size: 14px;
-}
-
-/* Para la versión clara */
-.ag-theme-streamlit-light {
-    --ag-background-color: #e9f1fb !important;
-    --ag-odd-row-background-color: #f3f7ff !important;
-    --ag-header-background-color: #004080 !important;
-    --ag-header-foreground-color: #ffffff !important;
-    --ag-foreground-color: #1a1a1a !important;
-    --ag-border-color: #c5d9f2 !important;
-    --ag-font-size: 14px;
-}
-
-/* Forzar texto negro */
-.ag-root-wrapper, .ag-cell, .ag-header-cell {
-    color: #1a1a1a !important;
-}
-
-</style>
-""", unsafe_allow_html=True)
 # --- Configurar logo ---
 logo_path = "logo-intep.png"
 
@@ -441,6 +419,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
