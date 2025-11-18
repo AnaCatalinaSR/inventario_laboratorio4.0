@@ -9,150 +9,65 @@ import streamlit as st
 import os
 #color pagina
 
-st.markdown("""
-<style>
-
-:root {
-    /* ANTES: azul → AHORA: amarillo */
-    --azul-principal: #ffdd00;        /* reemplazo del azul fuerte */
-    --azul-secundario: #ffea66;       /* reemplazo del azul medio */
-    --azul-claro: #fff9cc;            /* reemplazo del azul claro */
-
-    /* ANTES: blanco → igual */
-    --blanco: #ffffff;
-
-    /* ANTES: gris suave → igual */
-    --gris-suave: #f7f9fc;
-
-    /* Texto igual */
-    --texto-oscuro: #1a1a1a;
-
-    /* AHORA: los lugares donde había amarillo usan azul */
-    --amarillo-antes: #004080;   /* azul fuerte */
-    --amarillo-suave: #0066cc;   /* azul suave */
-    --amarillo-claro: #e9f1fb;   /* azul clarito */
+/* Estilo para el contenedor principal */
+.main-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f0f4f8;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* ===== FONDO GENERAL ===== */
-[data-testid="stAppViewContainer"] {
-    background-color: var(--gris-suave);
-    color: var(--texto-oscuro);
+/* Estilo para el encabezado */
+.header {
+    text-align: center;
+    margin-bottom: 30px;
 }
 
-/* ======= BARRA SUPERIOR ======= */
-header[data-testid="stHeader"] {
-    background-color: var(--azul-claro) !important;   /* era azul → ahora amarillo claro */
-    color: var(--amarillo-antes) !important;          /* era azul texto → ahora azul fuerte */
-    border-bottom: 2px solid var(--amarillo-claro);   /* antes azul suave → ahora azul claro */
+.header h2 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #1e3a8a; /* Azul oscuro */
+    text-shadow: 2px 2px #bfdbfe; /* Azul claro */
 }
 
-/* Iconos del header */
-header[data-testid="stHeader"] svg {
-    fill: var(--amarillo-antes) !important;
+/* Estilo para la barra de búsqueda */
+.search-bar input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 2px solid #3b82f6; /* Azul */
+    border-radius: 8px;
+    font-size: 1.2rem;
 }
 
-/* Texto del header */
-header[data-testid="stHeader"] * {
-    color: var(--amarillo-antes) !important;
+/* Estilo para los elementos de inventario */
+.inventory-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px;
+    margin-bottom: 15px;
+    background-color: #e0f2fe; /* Azul súper claro */
+    border-left: 5px solid #3b82f6; /* Azul */
+    border-radius: 8px;
 }
 
-/* ===== SIDEBAR ===== */
-[data-testid="stSidebar"] {
-    background-color: var(--blanco);
-    border-right: 2px solid var(--azul-claro); /* antes azul → ahora amarillo claro */
-}
-[data-testid="stSidebar"] * {
-    color: var(--amarillo-antes) !important;  /* letra menú azul oscuro */
-    font-weight: 500;
-}
-
-[data-testid="stSidebarNav"] a:hover {
-    color: var(--amarillo-suave) !important;
-}
-
-/* ===== TITULOS ===== */
-h1, h2, h3, h4, h5 {
-    color: var(--azul-principal) !important; /* antes azul → ahora amarillo */
-    font-family: "Segoe UI", Roboto, sans-serif;
-}
-
-/* ===== BOTONES ===== */
-div.stButton > button {
-    background-color: var(--azul-principal);   /* antes azul → ahora amarillo */
-    color: var(--blanco);
+/* Estilo para los botones */
+.btn-primary {
+    background-color: #3b82f6; /* Azul */
+    color: white;
+    padding: 10px 20px;
     border: none;
     border-radius: 8px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-div.stButton > button:hover {
-    background-color: var(--amarillo-antes);   /* antes amarillo → ahora azul fuerte */
-    transform: translateY(-2px);
+    font-size: 1rem;
+    cursor: pointer;
 }
 
-/* ===== TABLAS ===== */
-.stDataFrame {
-    background: var(--blanco);
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    padding: 8px;
-    color: var(--texto-oscuro);
+.btn-primary:hover {
+    background-color: #1e3a8a; /* Azul oscuro */
 }
 
-/* ===== FORMULARIOS ===== */
-.stForm {
-    background: var(--amarillo-claro);  /* era azul → ahora azul clarito */
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    color: var(--texto-oscuro);
-}
-
-/* ===== INPUTS ===== */
-.stTextInput > div > div > input,
-.stNumberInput > div > input,
-.stTextArea > div > textarea,
-.stDateInput > div > input {
-    border: 1px solid var(--azul-principal);  /* antes azul → ahora amarillo */
-    border-radius: 6px;
-    background: var(--blanco);
-    color: var(--texto-oscuro);
-}
-
-.stTextInput > div > div > input:focus,
-.stNumberInput > div > input:focus,
-.stTextArea > div > textarea:focus,
-.stDateInput > div > input:focus {
-    outline: none;
-    border: 1.5px solid var(--amarillo-antes);  /* antes amarillo → ahora azul */
-    box-shadow: 0 0 4px rgba(0,64,128,0.2);
-}
-
-/* ===== MENSAJES ===== */
-.stAlert {
-    border-radius: 8px;
-}
-
-[data-testid="stSuccess"] {
-    background-color: #e6f4ea;
-    color: #1a6333;
-}
-[data-testid="stError"] {
-    background-color: #fdecea;
-    color: #a30d0d;
-}
-[data-testid="stWarning"] {
-    background-color: #fff4e5;
-    color: #8a6d1d;
-}
-
-/* ===== ENLACES ===== */
-a, p, label, span {
-    color: var(--texto-oscuro) !important;
-}
-
-</style>
-""", unsafe_allow_html=True)
 
 # --- Configurar logo ---
 logo_path = "logo-intep.png"
@@ -419,6 +334,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
