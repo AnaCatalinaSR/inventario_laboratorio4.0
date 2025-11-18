@@ -9,68 +9,70 @@ import streamlit as st
 import os
 #color pagina
 
-# === ESTILO PERSONALIZADO (Amarillo, Azul y Blanco) ===
 st.markdown("""
 <style>
 
 :root {
-    --azul-principal: #003366;      /* Azul oscuro */
-    --azul-secundario: #0055aa;     /* Azul medio */
-    --azul-claro: #e8f1ff;          /* Azul muy claro */
-    --amarillo: #ffdd00;            /* Amarillo institucional */
-    --amarillo-suave: #fff7cc;      /* Amarillo suave */
+    --amarillo-principal: #ffdd00;     /* Ahora reemplaza al azul */
+    --amarillo-secundario: #ffea66;    /* Amarillo claro */
+    --azul-principal: #003366;         /* Nuevo color para textos menú */
+    --azul-resaltado: #0055aa;         /* Azul para hover */
+    --azul-claro: #e8f1ff;             /* Azul suave para fondos */
     --blanco: #ffffff;
-    --texto-negro: #000000;
+    --negro: #000000;
 }
 
 /* ===== FONDO GENERAL ===== */
 [data-testid="stAppViewContainer"] {
     background-color: var(--blanco);
-    color: var(--texto-negro);
+    color: var(--negro);
 }
 
 /* ======= BARRA SUPERIOR ======= */
 header[data-testid="stHeader"] {
-    background-color: var(--amarillo) !important;
-    color: var(--texto-negro) !important;
-    border-bottom: 3px solid var(--azul-principal);
+    background-color: var(--amarillo-principal) !important; /* Antes azul → ahora amarillo */
+    color: var(--negro) !important;
+    border-bottom: 3px solid var(--azul-principal); /* Antes amarillo → ahora azul */
 }
 
 /* Iconos del header */
 header[data-testid="stHeader"] svg {
-    fill: var(--texto-negro) !important;
+    fill: var(--negro) !important;
 }
 
 /* ===== SIDEBAR ===== */
 [data-testid="stSidebar"] {
-    background-color: var(--azul-principal);
-    border-right: 3px solid var(--amarillo);
+    background-color: var(--amarillo-principal); /* Antes azul → ahora amarillo */
+    border-right: 3px solid var(--azul-principal);
 }
+
+/* Texto del menú ahora azul oscuro */
 [data-testid="stSidebar"] * {
-    color: var(--blanco) !important;
-    font-weight: 500;
+    color: var(--azul-principal) !important; 
+    font-weight: 600;
 }
+
 [data-testid="stSidebarNav"] a:hover {
-    color: var(--amarillo) !important;
+    color: var(--azul-resaltado) !important;
 }
 
 /* ===== TITULOS ===== */
 h1, h2, h3, h4, h5 {
-    color: var(--azul-principal) !important;
+    color: var(--amarillo-principal) !important; /* Antes azul → amarillo */
 }
 
 /* ===== BOTONES ===== */
 div.stButton > button {
-    background-color: var(--azul-principal);
-    color: var(--blanco);
+    background-color: var(--amarillo-principal); /* Era azul */
+    color: var(--negro);
     border: none;
     border-radius: 8px;
     font-weight: 600;
     transition: all 0.2s ease;
 }
 div.stButton > button:hover {
-    background-color: var(--amarillo);
-    color: var(--texto-negro);
+    background-color: var(--azul-principal); /* Era amarillo */
+    color: var(--blanco);
 }
 
 /* ===== TABLAS ===== */
@@ -79,16 +81,16 @@ div.stButton > button:hover {
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     padding: 8px;
-    color: var(--texto-negro);
+    color: var(--negro);
 }
 
 /* ===== FORMULARIOS ===== */
 .stForm {
-    background: var(--amarillo-suave);
+    background: var(--azul-claro);   /* Donde era amarillo suave → ahora azul suave */
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    color: var(--texto-negro);
+    color: var(--negro);
 }
 
 /* ===== INPUTS ===== */
@@ -96,18 +98,18 @@ div.stButton > button:hover {
 .stNumberInput > div > input,
 .stTextArea > div > textarea,
 .stDateInput > div > input {
-    border: 1px solid var(--azul-principal);
+    border: 1px solid var(--amarillo-principal);  /* Antes azul → amarillo */
     border-radius: 6px;
     background: var(--blanco);
-    color: var(--texto-negro);
+    color: var(--negro);
 }
 .stTextInput > div > div > input:focus,
 .stNumberInput > div > input:focus,
 .stTextArea > div > textarea:focus,
 .stDateInput > div > input:focus {
     outline: none;
-    border: 2px solid var(--amarillo);
-    box-shadow: 0 0 5px rgba(255,221,0,0.5);
+    border: 2px solid var(--azul-principal); /* Antes amarillo → azul */
+    box-shadow: 0 0 5px rgba(0,51,102,0.5);
 }
 
 /* ===== MENSAJES ===== */
@@ -127,16 +129,17 @@ div.stButton > button:hover {
 /* ===== TABLAS AG-GRID ===== */
 .ag-theme-streamlit-light {
     --ag-background-color: #ffffff !important;
-    --ag-odd-row-background-color: var(--amarillo-suave) !important;
-    --ag-header-background-color: var(--azul-principal) !important;
-    --ag-header-foreground-color: #ffffff !important;
+    --ag-odd-row-background-color: var(--azul-claro) !important; /* antes amarillo → azul */
+    --ag-header-background-color: var(--amarillo-principal) !important; 
+    --ag-header-foreground-color: #000000 !important;
     --ag-foreground-color: #000000 !important;
-    --ag-border-color: var(--amarillo) !important;
+    --ag-border-color: var(--azul-principal) !important;
     --ag-font-size: 14px;
 }
 
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
@@ -438,6 +441,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
