@@ -9,62 +9,54 @@ import streamlit as st
 import os
 #color pagina
 
-# === ESTILO INSTITUCIONAL CLARO (texto visible) ===
+# === ESTILO PERSONALIZADO (Amarillo, Azul y Blanco) ===
 st.markdown("""
 <style>
 
 :root {
-    --azul-principal: #004080;
-    --azul-secundario: #0066cc;
-    --azul-claro: #e9f1fb;
+    --azul-principal: #003366;      /* Azul oscuro */
+    --azul-secundario: #0055aa;     /* Azul medio */
+    --azul-claro: #e8f1ff;          /* Azul muy claro */
+    --amarillo: #ffdd00;            /* Amarillo institucional */
+    --amarillo-suave: #fff7cc;      /* Amarillo suave */
     --blanco: #ffffff;
-    --gris-suave: #f7f9fc;
-    --texto-oscuro: #1a1a1a;
+    --texto-negro: #000000;
 }
 
 /* ===== FONDO GENERAL ===== */
 [data-testid="stAppViewContainer"] {
-    background-color: var(--gris-suave);
-    color: var(--texto-oscuro);
+    background-color: var(--blanco);
+    color: var(--texto-negro);
 }
 
-/* ======= BARRA SUPERIOR (header) ======= */
+/* ======= BARRA SUPERIOR ======= */
 header[data-testid="stHeader"] {
-    background-color: var(--azul-claro) !important;
-    color: var(--azul-principal) !important;
-    border-bottom: 2px solid #d0e2ff;
+    background-color: var(--amarillo) !important;
+    color: var(--texto-negro) !important;
+    border-bottom: 3px solid var(--azul-principal);
 }
 
 /* Iconos del header */
 header[data-testid="stHeader"] svg {
-    fill: var(--azul-principal) !important;
-}
-
-/* Texto del header */
-header[data-testid="stHeader"] * {
-    color: var(--azul-principal) !important;
+    fill: var(--texto-negro) !important;
 }
 
 /* ===== SIDEBAR ===== */
 [data-testid="stSidebar"] {
-    background-color: var(--blanco);
-    border-right: 2px solid var(--azul-claro);
+    background-color: var(--azul-principal);
+    border-right: 3px solid var(--amarillo);
 }
 [data-testid="stSidebar"] * {
-    color: var(--azul-principal) !important;
+    color: var(--blanco) !important;
     font-weight: 500;
 }
-[data-testid="stSidebarNav"] a {
-    color: var(--azul-principal) !important;
-}
 [data-testid="stSidebarNav"] a:hover {
-    color: var(--azul-secundario) !important;
+    color: var(--amarillo) !important;
 }
 
 /* ===== TITULOS ===== */
 h1, h2, h3, h4, h5 {
     color: var(--azul-principal) !important;
-    font-family: "Segoe UI", Roboto, sans-serif;
 }
 
 /* ===== BOTONES ===== */
@@ -77,8 +69,8 @@ div.stButton > button {
     transition: all 0.2s ease;
 }
 div.stButton > button:hover {
-    background-color: var(--azul-secundario);
-    transform: translateY(-2px);
+    background-color: var(--amarillo);
+    color: var(--texto-negro);
 }
 
 /* ===== TABLAS ===== */
@@ -87,16 +79,16 @@ div.stButton > button:hover {
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     padding: 8px;
-    color: var(--texto-oscuro);
+    color: var(--texto-negro);
 }
 
 /* ===== FORMULARIOS ===== */
 .stForm {
-    background: var(--blanco);
-    border-radius: 10px;
+    background: var(--amarillo-suave);
+    border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    color: var(--texto-oscuro);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    color: var(--texto-negro);
 }
 
 /* ===== INPUTS ===== */
@@ -104,24 +96,21 @@ div.stButton > button:hover {
 .stNumberInput > div > input,
 .stTextArea > div > textarea,
 .stDateInput > div > input {
-    border: 1px solid #d3e3f7;
+    border: 1px solid var(--azul-principal);
     border-radius: 6px;
     background: var(--blanco);
-    color: var(--texto-oscuro);
+    color: var(--texto-negro);
 }
 .stTextInput > div > div > input:focus,
 .stNumberInput > div > input:focus,
 .stTextArea > div > textarea:focus,
 .stDateInput > div > input:focus {
     outline: none;
-    border: 1.5px solid var(--azul-secundario);
-    box-shadow: 0 0 4px rgba(0,64,128,0.2);
+    border: 2px solid var(--amarillo);
+    box-shadow: 0 0 5px rgba(255,221,0,0.5);
 }
 
 /* ===== MENSAJES ===== */
-.stAlert {
-    border-radius: 8px;
-}
 [data-testid="stSuccess"] {
     background-color: #e6f4ea;
     color: #1a6333;
@@ -135,13 +124,20 @@ div.stButton > button:hover {
     color: #8a6d1d;
 }
 
-/* ===== ENLACES Y TEXTOS ===== */
-a, p, label, span {
-    color: var(--texto-oscuro) !important;
+/* ===== TABLAS AG-GRID ===== */
+.ag-theme-streamlit-light {
+    --ag-background-color: #ffffff !important;
+    --ag-odd-row-background-color: var(--amarillo-suave) !important;
+    --ag-header-background-color: var(--azul-principal) !important;
+    --ag-header-foreground-color: #ffffff !important;
+    --ag-foreground-color: #000000 !important;
+    --ag-border-color: var(--amarillo) !important;
+    --ag-font-size: 14px;
 }
 
 </style>
 """, unsafe_allow_html=True)
+
 
 
 #color tablas
@@ -442,6 +438,7 @@ elif menu == "Historial":
     st.title("Historial de préstamos y devoluciones")
     historial = pd.DataFrame(sheet_historial.get_all_records())
     st.dataframe(historial)
+
 
 
 
