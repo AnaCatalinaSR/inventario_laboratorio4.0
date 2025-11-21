@@ -418,13 +418,7 @@ elif menu == "Kits":
     st.title("Listado de KITS")
     st.dataframe(kits_df, use_container_width=True)
 
-# BOTÓN DE CIERRE DE SESIÓN
-with st.sidebar:
-    st.markdown("### Sesión")
-    if st.button("Cerrar sesión"):
-        st.session_state["logged_in"] = False
-        st.success("Sesión cerrada correctamente.")
-        st.rerun()
+
 
 
 # ------------- APP PRINCIPAL ------------------
@@ -436,6 +430,7 @@ with st.sidebar:
         cookies.save()
         st.session_state["logged_in"] = False
         st.rerun()
+
 
 
 
