@@ -8,6 +8,7 @@ from PIL import Image
 import os
 import streamlit as st
 from streamlit_cookies_manager import EncryptedCookieManager
+import re
 
 
 # -------- COOKIES CONFIG --------
@@ -52,6 +53,38 @@ if "logged_in" not in st.session_state:
 if not st.session_state["logged_in"]:
     login_screen()
     st.stop()
+# ==============================
+# COFIGUARACIÓN ESTILO KITS
+st.markdown("""
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Montserrat', sans-serif;
+}
+
+h1, h2, h3 {
+    color: #1a3c6e;
+    font-weight: 600;
+}
+
+.sidebar .css-1d391kg {
+    background-color: #dce8ff !important;
+}
+
+.stButton>button {
+    background-color: #1a3c6e;
+    color: white;
+    border-radius: 8px;
+}
+
+.stCheckbox {
+    accent-color: #e0b100 !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 
 # ==============================
@@ -103,6 +136,35 @@ spreadsheet = client.open("INVENTARIO")
 sheet_inventario = spreadsheet.worksheet("INVENTARIO")
 sheet_historial = spreadsheet.worksheet("HISTORIAL")
 sheet_kits = spreadsheet.worksheet("KITS")
+#_______________________________________________
+# Utilidades para cargar tabla desde el link QR
+#_______________________________________________
+def extraer_id_y_gid(url):
+    doc_id = re.search(r"/d/([a-zA-Z0-9-_]+)", url).group(1)
+    gid = re.search(r"gid=([0-9]+)", url).group(1)
+    return doc_id, gid
+
+def cargar_tabla_kit(url, creds):
+    try:
+        doc_id, gid = extraer_id_y_gid(url)
+        gc = gspread.authorize(creds)
+        doc = gc.open_by_key(doc_id)
+
+        hoja = None
+        for ws in doc.worksheets():
+            if str(ws.id) == gid:
+                hoja = ws
+                break
+
+        if hoja is None:
+            return None
+
+        return hoja.get_all_records()
+
+    except Exception as e:
+        print("ERROR leyendo QR:", e)
+        return None
+
 
 # ==============================
 # FUNCIÓN AUXILIAR
@@ -139,6 +201,38 @@ def actualizar_estado_y_cantidad(id_componente):
             sheet_inventario.update_cell(i + 2, 4, disponible)
             sheet_inventario.update_cell(i + 2, 5, estado)
             break
+# ==============================
+# Pantalla para marcar contenido del kit
+# ==============================
+
+def mostrar_verificacion_kit(nombre_kit, url_qr, creds):
+    st.subheader(f"Verificación de contenido – {nombre_kit}")
+
+    tabla = cargar_tabla_kit(url_qr, creds)
+
+    if tabla is None:
+        st.error("No se pudo cargar la lista del kit desde el QR.")
+        return None
+
+    st.write("### Contenido del kit")
+
+    estados = []
+    for item in tabla:
+        elemento = item.get("Elemento", "Elemento sin nombre")
+
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.write(f"📦 {elemento}")
+        with col2:
+            ok = st.checkbox("OK", key=f"kit_{nombre_kit}_{elemento}")
+        
+        estados.append({
+            "Elemento": elemento,
+            "OK": ok
+        })
+
+    return estados
+
 
 # ==============================
 # MENÚ
@@ -177,239 +271,88 @@ if menu == "Inventario":
 # 2. REGISTRAR PRÉSTAMO
 # ==============================
 elif menu == "Registrar Préstamo":
-
     st.title("Registrar Préstamo")
 
-    inventario = pd.DataFrame(sheet_inventario.get_all_records())
-    kits = pd.DataFrame(sheet_kits.get_all_records())
-
-    busqueda = st.text_input("Buscar componente por nombre o ID:")
-
-    if busqueda:
-        coincidencias = inventario[
-            inventario["ID"].astype(str).str.contains(busqueda, case=False) |
-            inventario["Componente"].astype(str).str.contains(busqueda, case=False)
-        ]
-    else:
-        coincidencias = pd.DataFrame()
-
-    if len(coincidencias) > 0:
-
-        seleccionado = st.selectbox(
-            "Seleccione un componente:",
-            coincidencias["Componente"] + " (ID: " + coincidencias["ID"].astype(str) + ")"
-        )
-
-        id_real = seleccionado.split("ID: ")[1].replace(")", "")
-
-        # Verificar si es un kit
-        kits_relacionados = kits[kits["ID Inventario"].astype(str) == str(id_real)]
-        es_kit = len(kits_relacionados) > 0
-
-        if es_kit:
-            st.subheader("Este componente es un KIT")
-
-            kits_disponibles = kits_relacionados[kits_relacionados["Estado"] == "Disponible"]
-
-            if len(kits_disponibles) == 0:
-                st.error("No hay kits disponibles.")
-            else:
-                numero_kit = st.selectbox(
-                    "Seleccione el número de kit disponible:",
-                    kits_disponibles["Número Kit"].astype(str)
-                )
-
-                info_kit = kits_disponibles[kits_disponibles["Número Kit"].astype(str) == numero_kit].iloc[0]
-                st.write("Observación:", info_kit["Observación"])
-                st.write("QR:", info_kit["QR"])
-
-        else:
-            st.info("Este componente NO es un Kit.")
-
-        nombre = st.text_input("Nombre de quien realiza el préstamo")
-        cantidad = st.number_input("Cantidad", min_value=1, step=1)
-
-        if st.button("Registrar Préstamo"):
-
-            registro = {
-                "ID": id_real,
-                "Componente": seleccionado,
-                "Persona": nombre,
-                "Acción": "Préstamo",
-                "Fecha": str(datetime.now().date()),
-                "Cantidad": cantidad,
-                "Obs": "",
-            }
-
-            if es_kit:
-                registro["Número Kit"] = numero_kit
-                fila_kit = kits_relacionados[
-                    kits_relacionados["Número Kit"].astype(str) == numero_kit
-                ].index[0] + 2
-                sheet_kits.update_cell(fila_kit, kits.columns.get_loc("Estado") + 1, "Prestado")
-
-            sheet_historial.append_row(list(registro.values()))
-            actualizar_estado_y_cantidad(id_real)
-            st.success("Préstamo registrado correctamente.")
-
-# ==============================
-# 3. REGISTRAR DEVOLUCIÓN
-# ==============================
-
-# ==============================
-# 3. REGISTRAR DEVOLUCIÓN (CORREGIDO, con soporte para KITS)
-# ==============================
-elif menu == "Registrar Devolución":
-    st.title("Registrar Devolución")
-
-    # Cargar datos frescos
-    inventario = pd.DataFrame(sheet_inventario.get_all_records())
-    kits = pd.DataFrame(sheet_kits.get_all_records())
-
-    # Búsqueda / vista previa
     busqueda = st.text_input("Buscar componente (por nombre o ID):")
     if busqueda:
         coincidencias = inventario[
             inventario["Componente"].str.contains(busqueda, case=False, na=False) |
-            inventario["ID"].astype(str).str.contains(busqueda, case=False, na=False)
+            inventario["ID Inventario"].astype(str).str.contains(busqueda)
         ]
-        if coincidencias.empty:
-            st.warning("No se encontraron componentes para esa búsqueda.")
-        else:
-            st.dataframe(coincidencias, use_container_width=True)
 
-    # Datos para devolución
-    id_dev = st.text_input("ID del componente (para devolución)")
-    persona = st.text_input("Persona que devuelve")
-    fecha_dev = st.date_input("Fecha de devolución")
-    observaciones_dev = st.text_area("Observaciones (opcional)")
+        if not coincidencias.empty:
+            seleccionado = st.selectbox("Selecciona un componente", coincidencias["Componente"].unique())
+            fila = coincidencias[coincidencias["Componente"] == seleccionado].iloc[0]
 
-    # Si se ingresó ID, detectamos si es kit y listamos kits prestados
-    es_kit = False
-    kits_relacionados = pd.DataFrame()
-    kits_prestados = pd.DataFrame()
-    seleccion_kit = None
+            # SI ES KIT
+            if fila["Tipo"] == "Kit":
+                st.subheader("Este es un KIT")
 
-    if id_dev:
-        kits_relacionados = kits[kits["ID Inventario"].astype(str) == str(id_dev)]
-        es_kit = not kits_relacionados.empty
+                # Buscar en hoja KITS
+                fila_kit = kits[kits["ID Inventario"] == fila["ID Inventario"]].iloc[0]
+                url_qr = fila_kit["QR"]
 
-        if es_kit:
-            # Filtrar kits actualmente prestados
-            kits_prestados = kits_relacionados[
-                kits_relacionados["Estado"].astype(str).str.lower() == "prestado"
-            ]
+                verificacion = mostrar_verificacion_kit(fila["Componente"], url_qr, creds)
 
-            if kits_prestados.empty:
-                st.info("No hay kits prestados actualmente para este ID.")
-            else:
-                # Mostrar selectbox con 'Kit ID - #Número'
-                opciones = (kits_prestados["Kit ID"].astype(str) + " - Kit #" +
-                            kits_prestados["Número Kit"].astype(str))
-                seleccion_kit = st.selectbox("Selecciona el kit a devolver:", opciones)
+            usuario = st.text_input("Nombre de quien lo lleva")
+            fecha = st.date_input("Fecha del préstamo")
 
-    # Botón para confirmar devolución
-    if st.button("Registrar devolución"):
-        # Validaciones básicas
-        if not id_dev:
-            st.error("Ingresa el ID del componente.")
-        elif not persona:
-            st.error("Ingresa la persona que devuelve.")
-        else:
-            # --- Devolución de KIT ---
-            if es_kit:
-                if kits_prestados.empty:
-                    st.error("No hay kits prestados para devolver (o el kit ya está disponible).")
-                else:
-                    # Extraer Kit ID desde la opción seleccionada
-                    if not seleccion_kit:
-                        st.error("Selecciona primero el kit a devolver.")
-                    else:
-                        kit_id = seleccion_kit.split(" - ")[0].strip()
+            if st.button("Registrar préstamo"):
+                # Guardar en HISTORIAL
+                historial_hoja.append_row([
+                    fila["ID Inventario"],
+                    fila["Componente"],
+                    "Préstamo",
+                    usuario,
+                    str(fecha),
+                    "KIT" if fila["Tipo"] == "Kit" else "Individual",
+                    json.dumps(verificacion) if fila["Tipo"] == "Kit" else ""
+                ])
 
-                        # Buscar fila del kit en kits dataframe para actualizar hoja
-                        try:
-                            fila_rel = kits[kits["Kit ID"].astype(str) == kit_id].index[0]  # 0-based
-                        except IndexError:
-                            st.error("No pude encontrar la fila del kit en la hoja KITS.")
-                            fila_rel = None
+                st.success("Préstamo registrado correctamente.")
 
-                        if fila_rel is not None:
-                            row_number = fila_rel + 2  # +2 por encabezado en Sheets
 
-                            # Actualizar Estado y Observación en la hoja KITS
-                            # Obtener índices de columna (1-based) usando el df 'kits' (asegúrate que columnas coinciden)
-                            col_estado = kits.columns.get_loc("Estado") + 1
-                            col_obs = kits.columns.get_loc("Observación") + 1
+# =============================
+# REGISTRO DEVOLUCIÓN
 
-                            sheet_kits.update_cell(row_number, col_estado, "Disponible")
-                            sheet_kits.update_cell(row_number, col_obs, observaciones_dev if observaciones_dev else "")
+elif menu == "Registrar Devolución":
+    st.title("Registrar Devolución")
 
-                            # Registrar en HISTORIAL: [ID, Componente, Persona, Acción, Fecha, Cantidad, Observaciones]
-                            # Obtener nombre del componente desde inventario (si existe)
-                            inv_match = inventario[inventario["ID"].astype(str) == str(id_dev)]
-                            nombre_comp = inv_match.iloc[0]["Componente"] if not inv_match.empty else id_dev
+    busqueda = st.text_input("Buscar componente (por nombre o ID):")
+    if busqueda:
+        coincidencias = inventario[
+            inventario["Componente"].str.contains(busqueda, case=False, na=False) |
+            inventario["ID Inventario"].astype(str).str.contains(busqueda)
+        ]
 
-                            sheet_historial.append_row([
-                                id_dev,
-                                f"{nombre_comp} (Kit {kit_id})",
-                                persona,
-                                "Devolución",
-                                str(fecha_dev),
-                                1,
-                                observaciones_dev if observaciones_dev else ""
-                            ])
+        if not coincidencias.empty:
+            seleccionado = st.selectbox("Selecciona un componente", coincidencias["Componente"].unique())
+            fila = coincidencias[coincidencias["Componente"] == seleccionado].iloc[0]
 
-                            # Actualizar contadores en INVENTARIO
-                            actualizar_estado_y_cantidad(id_dev)
+            # SI ES KIT – mostrar verificación
+            if fila["Tipo"] == "Kit":
+                st.subheader("Este es un KIT")
 
-                            st.success(f"Kit {kit_id} devuelto y marcado como Disponible.")
+                fila_kit = kits[kits["ID Inventario"] == fila["ID Inventario"]].iloc[0]
+                url_qr = fila_kit["QR"]
 
-            # --- Devolución normal (no es kit) ---
-            else:
-                # Validar que existan préstamos pendientes
-                historial = sheet_historial.get_all_records()
+                verificacion = mostrar_verificacion_kit(fila["Componente"], url_qr, creds)
 
-                total_prestado = sum(
-                    int(h["Cantidad"])
-                    for h in historial
-                    if str(h["ID"]).strip().lower() == str(id_dev).strip().lower()
-                    and str(h["Acción"]).strip().lower() == "préstamo"
-                    and h["Persona"].strip().lower() == persona.strip().lower()
-                )
+            usuario = st.text_input("Nombre quien devuelve")
+            fecha = st.date_input("Fecha de devolución")
 
-                total_devuelto = sum(
-                    int(h["Cantidad"])
-                    for h in historial
-                    if str(h["ID"]).strip().lower() == str(id_dev).strip().lower()
-                    and str(h["Acción"]).strip().lower() == "devolución"
-                    and h["Persona"].strip().lower() == persona.strip().lower()
-                )
+            if st.button("Registrar devolución"):
+                historial_hoja.append_row([
+                    fila["ID Inventario"],
+                    fila["Componente"],
+                    "Devolución",
+                    usuario,
+                    str(fecha),
+                    "KIT" if fila["Tipo"] == "Kit" else "Individual",
+                    json.dumps(verificacion) if fila["Tipo"] == "Kit" else ""
+                ])
 
-                pendiente = total_prestado - total_devuelto
-
-                if pendiente <= 0:
-                    st.error("No hay préstamos pendientes para esta persona y componente.")
-                else:
-                    cantidad_dev = st.number_input("Cantidad a devolver ahora:", min_value=1, max_value=pendiente, value=1)
-                    # Confirmación adicional (evita duplicar al usar botón)
-                    if st.button("Confirmar devolución de componente"):
-                        # Obtener nombre del componente para historial
-                        inv_match = inventario[inventario["ID"].astype(str) == str(id_dev)]
-                        nombre_comp = inv_match.iloc[0]["Componente"] if not inv_match.empty else id_dev
-
-                        sheet_historial.append_row([
-                            id_dev,
-                            nombre_comp,
-                            persona,
-                            "Devolución",
-                            str(fecha_dev),
-                            int(cantidad_dev),
-                            observaciones_dev if observaciones_dev else ""
-                        ])
-
-                        actualizar_estado_y_cantidad(id_dev)
-                        st.success("Devolución registrada correctamente.")
+                st.success("Devolución registrada correctamente.")
 
 
 # ==============================
@@ -434,6 +377,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
