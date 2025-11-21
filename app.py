@@ -34,6 +34,13 @@ if "logged_in" not in st.session_state:
 if not st.session_state["logged_in"]:
     login_screen()
     st.stop()
+# BOTÓN DE CIERRE DE SESIÓN
+with st.sidebar:
+    st.write("---")
+    if st.button("Cerrar sesión"):
+        st.session_state["logged_in"] = False
+        st.success("Has cerrado sesión correctamente.")
+        st.rerun()
 
 # ==============================
 # CONFIGURACIÓN Y ESTILOS
@@ -406,6 +413,7 @@ elif menu == "Historial":
 elif menu == "Kits":
     st.title("Listado de KITS")
     st.dataframe(kits_df, use_container_width=True)
+
 
 
 
