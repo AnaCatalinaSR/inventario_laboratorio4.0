@@ -6,6 +6,34 @@ from datetime import datetime
 import json
 from PIL import Image
 import os
+import streamlit as st
+
+# ------------------------------
+# SISTEMA DE INICIO DE SESIÓN
+# ------------------------------
+def login_screen():
+    st.title("Inicio de Sesión")
+    st.write("Acceso restringido al sistema de inventario.")
+
+    user = st.text_input("Usuario")
+    pwd = st.text_input("Contraseña", type="password")
+
+    if st.button("Ingresar"):
+        if user == st.secrets["auth"]["username"] and pwd == st.secrets["auth"]["password"]:
+            st.session_state["logged_in"] = True
+            st.success("Acceso concedido. Bienvenido.")
+            st.rerun()
+        else:
+            st.error("Usuario o contraseña incorrectos.")
+
+# Crear variable inicial
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
+
+# Mostrar login si no ha iniciado sesión
+if not st.session_state["logged_in"]:
+    login_screen()
+    st.stop()
 
 # ==============================
 # CONFIGURACIÓN Y ESTILOS
@@ -378,6 +406,7 @@ elif menu == "Historial":
 elif menu == "Kits":
     st.title("Listado de KITS")
     st.dataframe(kits_df, use_container_width=True)
+
 
 
 
