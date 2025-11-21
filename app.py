@@ -7,10 +7,13 @@ import json
 from PIL import Image
 import os
 import streamlit as st
+from streamlit_cookies_manager import EncryptedCookieManager
 
-# ------------------------------
-# SISTEMA DE INICIO DE SESIÓN
-# ------------------------------
+# CONFIGURAR COOKIES
+cookies = EncryptedCookieManager(prefix="inventario_login")
+if not cookies.ready():
+    st.stop()
+
 def login_screen():
     st.title("Inicio de Sesión")
     st.write("Acceso restringido al sistema de inventario.")
@@ -20,20 +23,28 @@ def login_screen():
 
     if st.button("Ingresar"):
         if user == st.secrets["auth"]["username"] and pwd == st.secrets["auth"]["password"]:
+            # Guardar login en cookie
+            cookies["logged"] = "yes"
+            cookies.save()
+
             st.session_state["logged_in"] = True
-            st.success("Acceso concedido. Bienvenido.")
             st.rerun()
         else:
             st.error("Usuario o contraseña incorrectos.")
 
-# Crear variable inicial
+# Leer cookie al iniciar
+if cookies.get("logged") == "yes":
+    st.session_state["logged_in"] = True
+
+# Inicializar variable
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 
-# Mostrar login si no ha iniciado sesión
+# Si no ha iniciado sesión → mostrar login
 if not st.session_state["logged_in"]:
     login_screen()
     st.stop()
+
 
 # ==============================
 # CONFIGURACIÓN Y ESTILOS
@@ -416,6 +427,15 @@ with st.sidebar:
         st.rerun()
 
 
+# ------------- APP PRINCIPAL ------------------
+
+with st.sidebar:
+    st.markdown("### Sesión")
+    if st.button("Cerrar sesión"):
+        cookies["logged"] = "no"
+        cookies.save()
+        st.session_state["logged_in"] = False
+        st.rerun()
 
 
 
