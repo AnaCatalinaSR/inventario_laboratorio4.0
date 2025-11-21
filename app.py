@@ -9,11 +9,17 @@ import os
 import streamlit as st
 from streamlit_cookies_manager import EncryptedCookieManager
 
-# CONFIGURAR COOKIES
-cookies = EncryptedCookieManager(prefix="inventario_login")
+
+# -------- COOKIES CONFIG --------
+cookies = EncryptedCookieManager(
+    prefix="inventario_login",
+    password=st.secrets["cookies"]["password"]
+)
+
 if not cookies.ready():
     st.stop()
 
+# -------- LOGIN SCREEN --------
 def login_screen():
     st.title("Inicio de Sesión")
     st.write("Acceso restringido al sistema de inventario.")
@@ -23,24 +29,26 @@ def login_screen():
 
     if st.button("Ingresar"):
         if user == st.secrets["auth"]["username"] and pwd == st.secrets["auth"]["password"]:
-            # Guardar login en cookie
+            # Guardar cookie
             cookies["logged"] = "yes"
             cookies.save()
 
+            # Actualizar session_state
             st.session_state["logged_in"] = True
             st.rerun()
         else:
             st.error("Usuario o contraseña incorrectos.")
 
-# Leer cookie al iniciar
+
+# -------- LEER COOKIE --------
 if cookies.get("logged") == "yes":
     st.session_state["logged_in"] = True
 
-# Inicializar variable
+# Inicializar estado
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 
-# Si no ha iniciado sesión → mostrar login
+# Mostrar login si no ha iniciado sesión
 if not st.session_state["logged_in"]:
     login_screen()
     st.stop()
@@ -419,17 +427,17 @@ elif menu == "Kits":
     st.dataframe(kits_df, use_container_width=True)
 
 
+# ----------- APP PRINCIPAL ----------
+st.sidebar.markdown("### Sesión")
+if st.sidebar.button("Cerrar sesión"):
+    cookies["logged"] = "no"
+    cookies.save()
+    st.session_state["logged_in"] = False
+    st.rerun()
 
+st.title("Sistema de Inventario")
+st.write("✔ Sesión activa")
 
-# ------------- APP PRINCIPAL ------------------
-
-with st.sidebar:
-    st.markdown("### Sesión")
-    if st.button("Cerrar sesión"):
-        cookies["logged"] = "no"
-        cookies.save()
-        st.session_state["logged_in"] = False
-        st.rerun()
 
 
 
