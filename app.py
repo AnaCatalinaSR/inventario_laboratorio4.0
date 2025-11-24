@@ -181,37 +181,42 @@ def actualizar_estado_y_cantidad(id_componente):
 # ====================================
 # Pantalla para marcar/verificar contenido del kit (con fallback manual)
 # ====================================
-def mostrar_verificacion_con_fallback(nombre_kit, url_qr, key_prefix):
-    """
-    Devuelve lista de dicts {'Elemento':..., 'OK': True/False} o None si no se realizó verificación.
-    key_prefix debe ser una cadena única (ej: f"pre_{id}_{num}" o f"dev_{id}_{num}")
-    """
-    st.markdown(f"#### Verificación: {nombre_kit}")
-    tabla = intentar_cargar_tabla_desde_qr(url_qr)
 
-    verificacion = []
-    if tabla:
-        st.info("Lista cargada desde el documento del QR. Marca lo que esté presente:")
-        for i, fila in enumerate(tabla):
-            elemento = fila.get("Elemento") or fila.get("Item") or fila.get("Nombre") or str(fila)
-            chk_key = f"{key_prefix}_auto_{i}"
-            ok = st.checkbox(elemento, key=chk_key, value=True)
-            verificacion.append({"Elemento": elemento, "OK": bool(ok)})
-    else:
-        st.warning("No fue posible leer automáticamente el documento apuntado por el QR.")
-        if service_account_email:
-            st.markdown(f"**Comparte el documento con:** `{service_account_email}` (Viewer) y recarga la app.")
-        st.markdown("O pega aquí la lista del kit (una línea por elemento) para verificación manual:")
-        texto = st.text_area(f"Lista manual ({key_prefix})", height=200, placeholder="Arduino UNO\nCables Dupont\nProtoboard")
-        if texto:
-            lineas = [l.strip() for l in texto.splitlines() if l.strip()]
-            for i, elemento in enumerate(lineas):
-                chk_key = f"{key_prefix}_manual_{i}"
-                ok = st.checkbox(elemento, key=chk_key, value=True)
-                verificacion.append({"Elemento": elemento, "OK": bool(ok)})
-        else:
-            st.info("No pegaste la lista manual. Puedes continuar sin checklist o pegarla luego.")
-    return verificacion
+def mostrar_verificacion_kit(nombre_kit, url_qr, creds):
+    st.subheader(f"Verificación de contenido – {nombre_kit}")
+
+    tabla = cargar_tabla_kit(url_qr, creds)
+
+    if tabla is None:
+        st.error("No se pudo cargar la lista del kit desde el QR.")
+        return None
+
+    # Convertir a DataFrame (esto elimina llaves feas)
+    df_tabla = pd.DataFrame(tabla)
+
+    # Mostrar tabla normal del kit
+    st.write("### Contenido del Kit")
+    st.dataframe(df_tabla, use_container_width=True)
+
+    st.write("### Verificación")
+
+    estados = []
+    for i, item in df_tabla.iterrows():
+        elemento = item.get("Elemento", f"Elemento {i}")
+
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.write(f"📦 {elemento}")
+        with col2:
+            ok = st.checkbox("OK", key=f"verif_{nombre_kit}_{i}")
+
+        estados.append({
+            "Elemento": elemento,
+            "OK": ok
+        })
+
+    return estados
+
 
 # ====================================
 # MENÚ PRINCIPAL
@@ -511,6 +516,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
