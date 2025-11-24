@@ -254,8 +254,6 @@ if menu == "Inventario":
 # ------------------------------
 
 elif menu == "Registrar Préstamo":
-    
-    st.write(client.open("INVENTARIO").worksheets())
     st.title("Registrar Préstamo")
     # recargar para datos actualizados
     inventario_df = pd.DataFrame(sheet_inventario.get_all_records())
@@ -278,6 +276,7 @@ elif menu == "Registrar Préstamo":
         )
         id_real = seleccionado.split("ID: ")[1].replace(")", "")
         comp_row = coincidencias[coincidencias["ID"].astype(str) == id_real].iloc[0]
+        st.write(client.open("INVENTARIO").worksheets())
         st.write(f"**Componente:** {comp_row['Componente']}  —  **ID:** {id_real}")
 
         # comprobar si hay kits relacionados
@@ -519,6 +518,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
