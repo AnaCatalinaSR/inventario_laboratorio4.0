@@ -256,8 +256,8 @@ if menu == "Inventario":
 elif menu == "Registrar Préstamo":
     st.title("Registrar Préstamo")
     # recargar para datos actualizados
-    inventario_df = pd.DataFrame(INVENTARIO.get_all_records())
-    kits_df = pd.DataFrame(KITS.get_all_records())
+    inventario_df = pd.DataFrame(sheet_inventario.get_all_records())
+    kits_df = pd.DataFrame(sheet_kits.get_all_records())
 
     busqueda = st.text_input("Buscar componente por nombre o ID:")
     coincidencias = pd.DataFrame()
@@ -517,6 +517,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
