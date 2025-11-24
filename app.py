@@ -252,7 +252,10 @@ if menu == "Inventario":
 # ------------------------------
 # 2) REGISTRAR PRÉSTAMO  (con verificación de kit)
 # ------------------------------
+
 elif menu == "Registrar Préstamo":
+    
+    st.write(client.open("INVENTARIO").worksheets())
     st.title("Registrar Préstamo")
     # recargar para datos actualizados
     inventario_df = pd.DataFrame(sheet_inventario.get_all_records())
@@ -516,6 +519,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
