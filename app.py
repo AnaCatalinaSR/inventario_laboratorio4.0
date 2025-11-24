@@ -298,8 +298,13 @@ elif menu == "Registrar Préstamo":
                 url_qr = kit_row.get("QR", "")
 
                 # mostrar verificación (fallback)
-                verificacion = mostrar_verificacion_con_fallback(f"{comp_row['Componente']} - Kit #{numero_kit}", url_qr, key_prefix=f"pre_{id_real}_{numero_kit}")
-
+                verificacion = []
+                if es_kit and numero_kit and url_qr:
+                    verificacion = mostrar_verificacion_con_fallback(
+                        f"{comp_row['Componente']} - Kit #{numero_kit}",
+                        url_qr,
+                        key_prefix=f"pre_{id_real}_{numero_kit}"
+                    )
         # Datos del préstamo
         nombre = st.text_input("Nombre de quien realiza el préstamo")
         fecha_prestamo = st.date_input("Fecha del préstamo", value=datetime.now().date())
@@ -517,6 +522,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
