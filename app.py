@@ -311,7 +311,11 @@ elif menu == "Registrar Préstamo":
                 if es_kit:
                     obs_col = f"Kit #{numero_kit}"
                     # actualizar estado en hoja KITS a Prestado
-                    fila_kit_idx = kits_df[kits_df["ID Inventario"].astype(str) == str(id_real) & (kits_df["Número Kit"].astype(str) == numero_kit)].index
+                    fila_kit_idx = kits_df[
+                    (kits_df["ID Inventario"].astype(str) == str(id_real)) &
+                    (kits_df["Número Kit"].astype(str) == str(numero_kit))
+                     ].index
+
                     # better: find the matching row in kits_df (use loc)
                     try:
                         fila_rel = kits_df[
@@ -507,6 +511,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
