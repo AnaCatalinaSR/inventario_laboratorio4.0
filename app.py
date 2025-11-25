@@ -221,34 +221,37 @@ def actualizar_estado_y_cantidad(id_componente):
 def mostrar_tabla_verificacion(df_componentes, key_prefix="verif"):
     df = df_componentes.copy()
 
-    # Detectar el nombre correcto de la columna
+    # Detectar columna del nombre del item
     col_nombre = None
     for posible in ["INVENTARIO", "Elemento", "Nombre", "Item"]:
         if posible in df.columns:
             col_nombre = posible
             break
 
+    # Si no existe columna válida, crear una genérica
     if col_nombre is None:
-        st.error(" No se encontró una columna válida ('INVENTARIO', 'Elemento', 'Nombre', 'Item').")
-        return df_componentes
+        col_nombre = "Elemento"
+        df[col_nombre] = [f"Item {i+1}" for i in range(len(df))]
 
-    st.subheader("Verificación de componentes del kit")
-    st.write("✓ Todos aparecen como **PRESENTES** por defecto. Marca solo los que **FALTAN**.")
+    # Crear columna Presente con valor True por defecto
+    if "Presente" not in df.columns:
+        df["Presente"] = True
 
-    faltantes = []
+    # Dibujar checkboxes
+    checks = []
     for i, row in df.iterrows():
-
-        # Checkbox SE MARCA solo si el componente FALTA
-        falta = st.checkbox(
-            f"-: {row[col_nombre]}",
-            key=f"{key_prefix}_{i}",
-            value=False  # por defecto NO falta
+        check_val = st.checkbox(
+            f"{'✔️' if row['Presente'] else '❌'} {row[col_nombre]}",
+            value=row["Presente"],
+            key=f"{key_prefix}_{i}"
         )
+        checks.append(check_val)
 
-        faltantes.append(falta)
+    # Actualizar columna
+    df["Presente"] = checks
 
-    df["Faltante"] = faltantes
     return df
+
 
 
 
@@ -669,6 +672,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
