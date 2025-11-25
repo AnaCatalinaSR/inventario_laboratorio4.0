@@ -177,111 +177,23 @@ def actualizar_estado_y_cantidad(id_componente):
             sheet_inventario.update_cell(i + 2, 4, disponible)
             sheet_inventario.update_cell(i + 2, 5, estado)
             break
+#-----------------------------------------------
+#VER LA TABLA CON CHECKBOXES
+#-----------------------------------------------
 
-# ====================================
-# Pantalla para marcar/verificar contenido del kit (con fallback manual)
-# ====================================
+def mostrar_tabla_verificacion(df_componentes, key_prefix="verif"):
+    df = df_componentes.copy()
 
-def mostrar_verificacion_kit(nombre_kit, url_qr, creds):
-    st.subheader(f"Verificación de contenido – {nombre_kit}")
+    checks = []
+    for i, row in df.iterrows():
+        check_val = st.checkbox(
+            f"✔ {row['INVENTARIO']}",
+            key=f"{key_prefix}_{i}"
+        )
+        checks.append(check_val)
 
-    tabla = cargar_tabla_kit(url_qr, creds)
-
-    if tabla is None:
-        st.error("No se pudo cargar la lista del kit desde el QR.")
-        return None
-
-    # Convertir a DataFrame (esto elimina llaves feas)
-    df_tabla = pd.DataFrame(tabla)
-
-    # Mostrar tabla normal del kit
-    st.write("### Contenido del Kit")
-    st.dataframe(df_tabla, use_container_width=True)
-
-    st.write("### Verificación")
-
-    estados = []
-    for i, item in df_tabla.iterrows():
-        elemento = item.get("Elemento", f"Elemento {i}")
-
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.write(f"📦 {elemento}")
-        with col2:
-            ok = st.checkbox("OK", key=f"verif_{nombre_kit}_{i}")
-
-        estados.append({
-            "Elemento": elemento,
-            "OK": ok
-        })
-
-    return estados
-
-# ---------------------------
-# mostrar_verificacion_con_fallback
-# ---------------------------
-def mostrar_verificacion_con_fallback(titulo, url_qr, key_prefix):
-    """
-    Intenta cargar la lista del kit desde el URL del QR (otro Google Sheet).
-    Si no puede (permisos / url inválida) muestra un fallback donde el usuario
-    pega manualmente la lista (una por línea).
-    Devuelve lista de dicts: [{'Elemento': 'x', 'OK': True/False}, ...]
-    """
-    verificacion = []
-
-    st.markdown(f"#### {titulo}")
-
-    # intentar carga automática desde QR
-    tabla = intentar_cargar_tabla_desde_qr(url_qr) if url_qr else None
-
-    if tabla:
-        # asegurar que tabla sea lista de dicts -> convertir a DataFrame para mostrar bonito
-        try:
-            df_tab = pd.DataFrame(tabla)
-            st.write("**Contenido cargado desde el documento del QR:**")
-            st.dataframe(df_tab, use_container_width=True)
-        except Exception:
-            # si no se puede convertir, simplemente itera sobre filas
-            st.write("Contenido (formato crudo):")
-            st.write(tabla)
-
-        st.write("Marca los ítems presentes:")
-        for i, fila in enumerate(tabla):
-            # intenta encontrar la columna que represente el nombre del elemento
-            elemento = fila.get("Elemento") or fila.get("Item") or fila.get("Nombre") or str(fila)
-            chk_key = f"{key_prefix}_auto_{i}"
-            ok = st.checkbox(elemento, key=chk_key, value=True)
-            verificacion.append({"Elemento": elemento, "OK": bool(ok)})
-    else:
-        st.warning("No se pudo leer automáticamente el documento apuntado por el QR.")
-        # mostrar correo de service account si está disponible
-        try:
-            creds_secret = st.secrets.get("credentials")
-            if creds_secret:
-                if isinstance(creds_secret, str):
-                    parsed = json.loads(creds_secret)
-                else:
-                    parsed = creds_secret
-                client_email = parsed.get("client_email")
-                if client_email:
-                    st.info(f"Comparte el documento con este correo de service account: `{client_email}` (permiso Viewer)")
-        except Exception:
-            pass
-
-        st.markdown("Pega la lista del kit (una línea = un elemento). Después marca los que estén OK.")
-        texto = st.text_area(f"Lista manual ({key_prefix})", height=180, placeholder="Arduino UNO\nCables Dupont\nProtoboard")
-        if texto:
-            lineas = [l.strip() for l in texto.splitlines() if l.strip()]
-            for i, elemento in enumerate(lineas):
-                chk_key = f"{key_prefix}_manual_{i}"
-                ok = st.checkbox(elemento, key=chk_key, value=True)
-                verificacion.append({"Elemento": elemento, "OK": bool(ok)})
-        else:
-            st.info("Si no pegas la lista manual, la verificación quedará vacía si guardas ahora.")
-
-    return verificacion
-
-
+    df["Presente"] = checks
+    return df
 
 # ====================================
 # MENÚ PRINCIPAL
@@ -482,15 +394,18 @@ elif menu == "Registrar Devolución":
                     numero_kit = str(row_kit["Número Kit"])
                     url_qr = row_kit.get("QR", "")
                     # mostrar verificación
+                    # Si el QR contiene datos del kit, convertirlos a tabla
+                    try:
+                        df_kit = pd.read_json(url_qr)   # si QR es JSON válido
+                    except:
+                        df_kit = pd.DataFrame({"INVENTARIO": [], "Cantidad": []})
+                    st.subheader("Verificación del kit")
+
+                    # Mostrar tabla bonita del kit + checkboxes
+                    tabla_verif = mostrar_tabla_verificacion(df_kit, key_prefix=f"pre_{id_real}_{numero_kit}")
                     
-                    verificacion = []
-                    if es_kit and numero_kit and url_qr and comp_row is not None:
-                        verificacion = mostrar_verificacion_con_fallback(
-                            f"{comp_row['Componente']} - Kit #{numero_kit}",
-                            url_qr,
-                            key_prefix=f"dev_{id_real}_{numero_kit}"
-                        )
-                   
+                    # Guardar verificación directamente desde la tabla
+                    verificacion = tabla_verif
 
         # datos devolución
         persona = st.text_input("Persona que devuelve")
@@ -596,6 +511,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
