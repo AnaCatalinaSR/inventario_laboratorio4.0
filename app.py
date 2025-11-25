@@ -232,12 +232,13 @@ if menu == "Inventario":
 
 elif menu == "Registrar Préstamo":
     st.title("Registrar Préstamo")
-    # recargar para datos actualizados
+    
     inventario_df = pd.DataFrame(sheet_inventario.get_all_records())
     kits_df = pd.DataFrame(sheet_kits.get_all_records())
 
     busqueda = st.text_input("Buscar componente por nombre o ID:")
     coincidencias = pd.DataFrame()
+    
     if busqueda:
         coincidencias = inventario_df[
             inventario_df["ID"].astype(str).str.contains(busqueda, case=False, na=False) |
@@ -251,44 +252,58 @@ elif menu == "Registrar Préstamo":
             "Seleccione un componente:",
             coincidencias["Componente"] + " (ID: " + coincidencias["ID"].astype(str) + ")"
         )
+
         id_real = seleccionado.split("ID: ")[1].replace(")", "")
         comp_row = coincidencias[coincidencias["ID"].astype(str) == id_real].iloc[0]
+
         st.write(f"**Componente:** {comp_row['Componente']}  —  **ID:** {id_real}")
 
-        # comprobar si hay kits relacionados
+        # verificar kits relacionados
         kits_relacionados = kits_df[kits_df["ID Inventario"].astype(str) == str(id_real)]
         es_kit = not kits_relacionados.empty
 
         numero_kit = None
-        verificacion = []
         url_qr = None
+        verificacion = []
 
         if es_kit:
             st.subheader("Este componente tiene KITS disponibles")
-            kits_disponibles = kits_relacionados[kits_relacionados["Estado"].astype(str).str.lower() == "disponible"]
+
+            kits_disponibles = kits_relacionados[
+                kits_relacionados["Estado"].astype(str).str.lower() == "disponible"
+            ]
+
             if kits_disponibles.empty:
-                st.warning("No hay kits marcados como 'Disponible' en KITS.")
+                st.warning("No hay kits disponibles para préstamo.")
             else:
-                numero_kit = st.selectbox("Seleccione el número de kit disponible:", kits_disponibles["Número Kit"].astype(str))
-                kit_row = kits_disponibles[kits_disponibles["Número Kit"].astype(str) == numero_kit].iloc[0]
+                numero_kit = st.selectbox(
+                    "Seleccione el número de kit disponible:",
+                    kits_disponibles["Número Kit"].astype(str)
+                )
+
+                kit_row = kits_disponibles[
+                    kits_disponibles["Número Kit"].astype(str) == numero_kit
+                ].iloc[0]
+
                 st.write("Observación:", kit_row.get("Observación", ""))
+
                 url_qr = kit_row.get("QR", "")
 
-                # Mostrar tabla de verificación del kit (sin fallback)
-                verificacion = []
-                if es_kit and numero_kit:
-                    try:
-                        df_kit = pd.read_json(url_qr)   # si el QR contiene un JSON válido
-                    except:
-                        df_kit = pd.DataFrame({"Elemento": [], "Cantidad": []})
-                
-                    st.subheader("Verificación del kit")
-                    verificacion = mostrar_tabla_verificacion(
-                        df_kit,
-                        key_prefix=f"pre_{id_real}_{numero_kit}"
-                    )
+                # Cargar tabla del QR
+                try:
+                    df_kit = pd.read_json(url_qr)   # si el QR contiene un JSON válido
+                except:
+                    df_kit = pd.DataFrame({"Elemento": [], "Cantidad": []})
 
-        # Datos del préstamo
+                st.subheader("Verificación del kit")
+                
+                verificacion = mostrar_tabla_verificacion(
+                    df_kit,
+                    key_prefix=f"pre_{id_real}_{numero_kit}"
+                )
+
+    # Continúa con los datos del préstamo…
+
         nombre = st.text_input("Nombre de quien realiza el préstamo")
         fecha_prestamo = st.date_input("Fecha del préstamo", value=datetime.now().date())
         cantidad = st.number_input("Cantidad (para componentes indiv.)", min_value=1, step=1, value=1)
@@ -516,6 +531,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
