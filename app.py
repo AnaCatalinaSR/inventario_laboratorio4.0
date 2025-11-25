@@ -223,11 +223,10 @@ def actualizar_estado_y_cantidad(id_componente):
 #-----------------------------------------------
 #VER LA TABLA CON CHECKBOXES
 #-----------------------------------------------
-
 def mostrar_tabla_verificacion(df_componentes, key_prefix="verif"):
     df = df_componentes.copy()
 
-    # Detectar la columna del nombre del componente
+    # Detectar el nombre correcto de la columna
     col_nombre = None
     for posible in ["INVENTARIO", "Elemento", "Nombre", "Item"]:
         if posible in df.columns:
@@ -235,38 +234,39 @@ def mostrar_tabla_verificacion(df_componentes, key_prefix="verif"):
             break
 
     if col_nombre is None:
-        st.error("❌ No se encontró una columna válida ('INVENTARIO', 'Elemento', etc.)")
+        st.error("❌ No se encontró una columna válida ('INVENTARIO' o 'Elemento') en el kit.")
         return df_componentes
 
     st.subheader("Verificación de componentes del kit")
 
     checks = []
-    estados = []
+    faltantes = []
 
     for i, row in df.iterrows():
+        nombre = row[col_nombre]
+
         check_val = st.checkbox(
-            f"{row[col_nombre]}",
+            f"{'✔️' if check_val else '❌'} {nombre}",
             key=f"{key_prefix}_{i}"
         )
 
+        if not check_val:
+            faltantes.append(nombre)
+
         checks.append(check_val)
 
-        if check_val:
-            estados.append("Presente")
-        else:
-            estados.append("❌ Faltante")
-
-    df["Estado"] = estados
     df["Presente"] = checks
 
-    # Mostrar tabla bonita con colores
-    st.write(
-        df[[col_nombre, "Estado"]]
-        .style.apply(lambda x: ["color: red" if v == "❌ Faltante" else "color: green"
-                                for v in x], axis=1)
-    )
+    # Sección mostrando faltantes
+    if len(faltantes) > 0:
+        st.warning("⚠ Componentes faltantes:")
+        for f in faltantes:
+            st.write(f"❌ {f}")
+    else:
+        st.success("🎉 Todos los componentes están presentes")
 
     return df
+
 
 
 
@@ -684,6 +684,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
