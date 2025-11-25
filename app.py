@@ -291,116 +291,127 @@ if menu == "Inventario":
 
 
 # ------------------------------
-# 2) REGISTRAR PRÉSTAMO  (con verificación de kit)
+# 2) REGISTRAR PRÉSTAMO (con verificación)
 # ------------------------------
-
 elif menu == "Registrar Préstamo":
     st.title("Registrar Préstamo")
-    
-    inventario_df = pd.DataFrame(sheet_inventario.get_all_records())
-    kits_df = pd.DataFrame(sheet_kits.get_all_records())
 
-    busqueda = st.text_input("Buscar componente por nombre o ID:")
+    inventario_df = cargar_inventario()
+    kits_df = cargar_kits()
+
+    busqueda = st.text_input("Buscar componente (por nombre o ID):")
     coincidencias = pd.DataFrame()
-    
+
     if busqueda:
         coincidencias = inventario_df[
-            inventario_df["ID"].astype(str).str.contains(busqueda, case=False, na=False) |
-            inventario_df["Componente"].astype(str).str.contains(busqueda, case=False, na=False)
+            inventario_df["Componente"].str.contains(busqueda, case=False, na=False) |
+            inventario_df["ID"].astype(str).str.contains(busqueda, case=False, na=False)
         ]
 
     if coincidencias.empty:
-        st.info("Busca un componente para comenzar.")
+        st.info("Busca un componente para comenzar el préstamo.")
         st.stop()
 
-    # Selección de componente
     seleccionado = st.selectbox(
         "Seleccione un componente:",
         coincidencias["Componente"] + " (ID: " + coincidencias["ID"].astype(str) + ")"
     )
 
-    id_real = seleccionado.split("ID: ")[1].replace(")", "")
+    id_real = seleccionado.split("ID: ")[1].replace(")", "").strip()
     comp_row = coincidencias[coincidencias["ID"].astype(str) == id_real].iloc[0]
 
     st.write(f"**Componente:** {comp_row['Componente']}  —  **ID:** {id_real}")
 
-    # verificar kits relacionados
-    kits_relacionados = kits_df[kits_df["ID Inventario"].astype(str) == str(id_real)]
+    kits_relacionados = kits_df[kits_df["ID Inventario"].astype(str) == id_real]
     es_kit = not kits_relacionados.empty
 
     numero_kit = None
-    url_qr = None
-    verificacion = []
+    df_kit = pd.DataFrame()
+    tabla_verif = None
+    col_nombre = None
 
-    # ──────────────────────────────────────────────
-    # SI ES KIT → SOLO PRESTAR EL KIT SELECCIONADO
-    # ──────────────────────────────────────────────
+    # =========================================================
+    #              PRÉSTAMO DE KITS
+    # =========================================================
     if es_kit:
-        st.subheader("Este componente tiene KITS disponibles")
+        st.subheader("Este componente tiene kits registrados")
 
         kits_disponibles = kits_relacionados[
-            kits_relacionados["Estado"].astype(str).str.lower() == "disponible"
+            kits_relacionados["Estado"].str.lower() == "disponible"
         ]
 
         if kits_disponibles.empty:
-            st.warning("No hay kits disponibles para préstamo.")
+            st.warning("No hay kits disponibles.")
             st.stop()
 
-        numero_kit = st.selectbox(
-            "Seleccione el número de kit disponible:",
-            kits_disponibles["Número Kit"].astype(str)
+        opciones = (
+            kits_disponibles["Kit ID"].astype(str) +
+            " - Kit #" + kits_disponibles["Número Kit"].astype(str)
         )
 
-        kit_row = kits_disponibles[
-            kits_disponibles["Número Kit"].astype(str) == numero_kit
-        ].iloc[0]
+        seleccion_kit = st.selectbox("Selecciona el kit a prestar:", opciones)
 
-        st.write("Observación:", kit_row.get("Observación", ""))
+        if seleccion_kit:
+            kit_id = seleccion_kit.split(" - ")[0].strip()
+            row_kit = kits_disponibles[kits_disponibles["Kit ID"].astype(str) == kit_id].iloc[0]
 
-        url_qr = kit_row.get("QR", "")
+            numero_kit = str(row_kit["Número Kit"])
+            url_qr = row_kit.get("QR", "")
 
-        # Cargar y mostrar verificación
-        data_kit = intentar_cargar_tabla_desde_qr(url_qr)
+            data_kit = intentar_cargar_tabla_desde_qr(url_qr)
+            df_kit = pd.DataFrame(data_kit) if data_kit else pd.DataFrame()
 
-        st.subheader("Verificación del kit")
-        verificacion = mostrar_tabla_verificacion(
-            pd.DataFrame(data_kit),
-            key_prefix=f"pre_{id_real}_{numero_kit}"
-        )
+            st.subheader("Verificación del contenido del kit")
+            st.info("✓ Todos aparecen como PRESENTES por defecto. Marca solo los que FALTAN.")
 
-    # ----------------------------------------------
-    # DATOS DEL PRÉSTAMO
-    # ----------------------------------------------
-    nombre = st.text_input("Nombre de quien realiza el préstamo")
-    fecha_prestamo = st.date_input("Fecha del préstamo", value=datetime.now().date())
-    cantidad = st.number_input("Cantidad (solo si NO es kit)", min_value=1, step=1, value=1)
+            tabla_verif = mostrar_tabla_verificacion(
+                df_kit,
+                key_prefix=f"prest_{id_real}_{numero_kit}"
+            )
 
-    # ----------------------------------------------
-    # BOTÓN: REGISTRAR PRÉSTAMO
-    # ----------------------------------------------
+            # Detectar nombre de columna
+            for posible in ["INVENTARIO", "Elemento", "Nombre", "Item"]:
+                if posible in tabla_verif.columns:
+                    col_nombre = posible
+                    break
+
+    # Datos generales
+    persona = st.text_input("Persona que solicita")
+    fecha_pres = st.date_input("Fecha del préstamo", value=datetime.now().date())
+    observaciones_pres = st.text_area("Observaciones (opcional)")
+
+    # Extraer faltantes (Presente = False)
+    faltantes = []
+    if es_kit and tabla_verif is not None and col_nombre:
+        faltantes = [
+            str(tabla_verif.iloc[i][col_nombre])
+            for i in range(len(tabla_verif))
+            if not bool(tabla_verif.iloc[i]["Presente"])
+        ]
+
+    texto_faltantes = ", ".join(faltantes) if faltantes else "Sin faltantes"
+
+    # =========================================================
+    #      BOTÓN DE REGISTRO
+    # =========================================================
     if st.button("Registrar Préstamo"):
 
-        if not nombre:
-            st.error("Ingresa el nombre de quien realiza el préstamo.")
+        if not persona:
+            st.error("Ingresa la persona que realiza el préstamo.")
             st.stop()
 
-        accion = "Préstamo"
-        cantidad_grabar = 1 if es_kit else int(cantidad)
-        obs_col = ""
-
-        # ----------------------------------------------
-        # ACTUALIZAR SOLO EL KIT SELECCIONADO
-        # ----------------------------------------------
-        if es_kit:
-            obs_col = f"Kit #{numero_kit}"
+        # =============================================
+        #       PRÉSTAMO DE UN KIT
+        # =============================================
+        if es_kit and numero_kit:
 
             try:
                 fila_rel = kits_df[
-                    (kits_df["ID Inventario"].astype(str) == str(id_real)) &
-                    (kits_df["Número Kit"].astype(str) == str(numero_kit))
+                    (kits_df["ID Inventario"].astype(str) == id_real) &
+                    (kits_df["Número Kit"].astype(str) == numero_kit)
                 ].index[0]
 
-                row_number = fila_rel + 2  # compensar encabezado
+                row_number = fila_rel + 2
                 col_estado = kits_df.columns.get_loc("Estado") + 1
 
                 sheet_kits.update_cell(row_number, col_estado, "Prestado")
@@ -409,31 +420,55 @@ elif menu == "Registrar Préstamo":
                 st.error(f"No pude actualizar el estado del kit: {e}")
                 st.stop()
 
-        # ----------------------------------------------
-        # GUARDAR VERIFICACIÓN EN HISTORIAL
-        # ----------------------------------------------
-        try:
-            ver_json = json.dumps(verificacion.to_dict(orient="records"), ensure_ascii=False)
-        except:
-            ver_json = "[]"
+            # Registrar historial
+            fila_hist = [
+                id_real,
+                comp_row["Componente"],
+                persona,
+                "Préstamo",
+                str(fecha_pres),
+                1,
+                texto_faltantes,   # los faltantes
+                numero_kit         # número de kit
+            ]
+
+            try:
+                sheet_historial.append_row(fila_hist)
+                actualizar_estado_y_cantidad(id_real)
+                st.success("Préstamo registrado correctamente.")
+            except Exception as e:
+                st.error(f"No pude guardar en HISTORIAL: {e}")
+
+            st.stop()
+
+        # =============================================
+        #       PRÉSTAMO NORMAL (sin kit)
+        # =============================================
+        cantidad_pres = st.number_input(
+            "Cantidad a prestar:",
+            min_value=1,
+            max_value=int(comp_row["Cantidad"]),
+            value=1
+        )
 
         fila_hist = [
             id_real,
             comp_row["Componente"],
-            nombre,
-            accion,
-            str(fecha_prestamo),
-            cantidad_grabar,
-            obs_col,
-            ver_json
+            persona,
+            "Préstamo",
+            str(fecha_pres),
+            int(cantidad_pres),
+            observaciones_pres or "",
+            ""
         ]
 
         try:
             sheet_historial.append_row(fila_hist)
             actualizar_estado_y_cantidad(id_real)
-            st.success("Préstamo registrado correctamente. Solo se prestó el kit seleccionado.")
+            st.success("Préstamo registrado correctamente.")
         except Exception as e:
             st.error(f"No pude guardar en HISTORIAL: {e}")
+
 
 # ------------------------------
 # 3) REGISTRAR DEVOLUCIÓN (con verificación)
@@ -670,6 +705,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
