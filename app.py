@@ -288,19 +288,16 @@ elif menu == "Registrar Préstamo":
                 st.write("Observación:", kit_row.get("Observación", ""))
 
                 url_qr = kit_row.get("QR", "")
+                #-------------------------------------
 
-                # Cargar tabla del QR
-                try:
-                    df_kit = pd.read_json(url_qr)   # si el QR contiene un JSON válido
-                except:
-                    df_kit = pd.DataFrame({"Elemento": [], "Cantidad": []})
+               data_kit = intentar_cargar_tabla_desde_qr(url_qr)
 
-                st.subheader("Verificación del kit")
-                
-                verificacion = mostrar_tabla_verificacion(
-                    df_kit,
-                    key_prefix=f"pre_{id_real}_{numero_kit}"
-                )
+                if data_kit:
+                    df_kit = pd.DataFrame(data_kit)
+                else:
+                    st.warning("⚠ No se pudo cargar el contenido del QR. Mostrando tabla vacía.")
+                    df_kit = pd.DataFrame({"INVENTARIO": [], "Cantidad": []})
+
 
     # Continúa con los datos del préstamo…
 
@@ -531,6 +528,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
