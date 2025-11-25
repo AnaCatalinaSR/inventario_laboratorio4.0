@@ -394,6 +394,7 @@ elif menu == "Registrar Devolución":
 
     busqueda = st.text_input("Buscar componente (por nombre o ID):")
     coincidencias = pd.DataFrame()
+
     if busqueda:
         coincidencias = inventario_df[
             inventario_df["Componente"].str.contains(busqueda, case=False, na=False) |
@@ -402,159 +403,176 @@ elif menu == "Registrar Devolución":
 
     if coincidencias.empty:
         st.info("Busca un componente para comenzar la devolución.")
-    else:
-        seleccionado = st.selectbox(
-            "Seleccione un componente:",
-            coincidencias["Componente"] + " (ID: " + coincidencias["ID"].astype(str) + ")"
+        st.stop()
+
+    # Selección del componente
+    seleccionado = st.selectbox(
+        "Seleccione un componente:",
+        coincidencias["Componente"] + " (ID: " + coincidencias["ID"].astype(str) + ")"
+    )
+    id_real = seleccionado.split("ID: ")[1].replace(")", "").strip()
+    comp_row = coincidencias[coincidencias["ID"].astype(str) == id_real].iloc[0]
+
+    st.write(f"**Componente:** {comp_row['Componente']}  —  **ID:** {id_real}")
+
+    # Comprobar kits relacionados
+    kits_relacionados = kits_df[kits_df["ID Inventario"].astype(str) == id_real]
+    es_kit = not kits_relacionados.empty
+
+    numero_kit = None
+    verificacion = []
+    df_kit = pd.DataFrame()
+
+    if es_kit:
+        st.subheader("Este componente tiene KITS registrados")
+
+        # kits prestados
+        kits_prestados = kits_relacionados[kits_relacionados["Estado"].str.lower() == "prestado"]
+
+        if kits_prestados.empty:
+            st.warning("No hay kits marcados como 'Prestado'.")
+            st.stop()
+
+        opciones = (
+            kits_prestados["Kit ID"].astype(str) + " - Kit #" + kits_prestados["Número Kit"].astype(str)
         )
+        seleccion_kit = st.selectbox("Selecciona el kit a devolver:", opciones)
 
-        id_real = seleccionado.split("ID: ")[1].replace(")", "")
-        comp_row = coincidencias[coincidencias["ID"].astype(str) == id_real].iloc[0]
-        st.write(f"**Componente:** {comp_row['Componente']}  —  **ID:** {id_real}")
+        if seleccion_kit:
+            kit_id = seleccion_kit.split(" - ")[0].strip()
+            row_kit = kits_prestados[kits_prestados["Kit ID"].astype(str) == kit_id].iloc[0]
 
-        # comprobar kits relacionados
-        kits_relacionados = kits_df[kits_df["ID Inventario"].astype(str) == str(id_real)]
-        es_kit = not kits_relacionados.empty
+            numero_kit = str(row_kit["Número Kit"])
+            url_qr = row_kit.get("QR", "")
 
-        numero_kit = None
-        verificacion = []
-        url_qr = None
+            # Intentar leer tabla desde QR
+            try:
+                df_kit = pd.read_json(url_qr)
+            except:
+                df_kit = pd.DataFrame({"INVENTARIO": [], "Cantidad": []})
 
-        if es_kit:
-            st.subheader("Este componente tiene KITS registrados")
+            st.subheader("Verificación del kit")
 
-            kits_prestados = kits_relacionados[
-                kits_relacionados["Estado"].astype(str).str.lower() == "prestado"
+            # Mostrar tabla con checkboxes
+            tabla_verif = mostrar_tabla_verificacion(df_kit, key_prefix=f"pre_{id_real}_{numero_kit}")
+
+            # Convertir a formato serializable
+            col_nombre = None
+            for posible in ["INVENTARIO", "Elemento", "Nombre", "Item"]:
+                if posible in tabla_verif.columns:
+                    col_nombre = posible
+                    break
+
+            verificacion = [
+                {
+                    "Elemento": str(tabla_verif.iloc[i][col_nombre]),
+                    "Presente": bool(tabla_verif.iloc[i]["Presente"])
+                }
+                for i in range(len(tabla_verif))
             ]
 
-            if kits_prestados.empty:
-                st.warning("No hay kits marcados como 'Prestado' para este componente.")
-            else:
-                opciones = (
-                    kits_prestados["Kit ID"].astype(str)
-                    + " - Kit #" + kits_prestados["Número Kit"].astype(str)
-                )
-                seleccion_kit = st.selectbox("Selecciona el kit a devolver:", opciones)
+    # Datos generales de devolución
+    persona = st.text_input("Persona que devuelve")
+    fecha_dev = st.date_input("Fecha de devolución", value=datetime.now().date())
+    observaciones_dev = st.text_area("Observaciones (opcional)")
 
-                if seleccion_kit:
-                    kit_id = seleccion_kit.split(" - ")[0].strip()
-                    row_kit = kits_prestados[kits_prestados["Kit ID"].astype(str) == kit_id].iloc[0]
-                    numero_kit = str(row_kit["Número Kit"])
-                    url_qr = row_kit.get("QR", "")
+    # BOTÓN PRINCIPAL
+    if st.button("Registrar Devolución"):
+        if not persona:
+            st.error("Ingresa la persona que devuelve.")
+            st.stop()
 
-                    # cargar tabla desde JSON del QR
-                    try:
-                        df_kit = pd.read_json(url_qr)
-                    except:
-                        df_kit = pd.DataFrame({"INVENTARIO": [], "Cantidad": []})
+        # --------------------------------
+        # DEVOLUCIÓN DE KIT
+        # --------------------------------
+        if es_kit and numero_kit:
 
-                    st.subheader("Verificación del kit")
+            # actualizar estado
+            try:
+                fila_rel = kits_df[
+                    (kits_df["ID Inventario"].astype(str) == id_real) &
+                    (kits_df["Número Kit"].astype(str) == numero_kit)
+                ].index[0]
 
-                    # tabla con checkboxes
-                    tabla_verif = mostrar_tabla_verificacion(
-                        df_kit,
-                        key_prefix=f"pre_{id_real}_{numero_kit}"
-                    )
+                row_number = fila_rel + 2
+                col_estado = kits_df.columns.get_loc("Estado") + 1
+                col_obs = kits_df.columns.get_loc("Observación") + 1
 
-                    # --- CORRECCIÓN JSON SERIALIZABLE ---
-                    verificacion = [
-                        {"item": k, "ok": bool(v)}
-                        for k, v in tabla_verif.items()
-                    ]
-                    # -------------------------------------
+                sheet_kits.update_cell(row_number, col_estado, "Disponible")
+                sheet_kits.update_cell(row_number, col_obs, observaciones_dev if observaciones_dev else "")
 
-        # datos devolución
-        persona = st.text_input("Persona que devuelve")
-        fecha_dev = st.date_input("Fecha de devolución", value=datetime.now().date())
-        observaciones_dev = st.text_area("Observaciones (opcional)")
+            except Exception:
+                st.warning("No pude actualizar el estado del kit.")
 
-        if st.button("Registrar Devolución"):
-            if not persona:
-                st.error("Ingresa la persona que devuelve.")
-            else:
-                if es_kit and numero_kit:
+            # serializar verificación
+            ver_json = json.dumps(verificacion, ensure_ascii=False)
 
-                    # actualizar estado del kit
-                    try:
-                        fila_rel = kits_df[
-                            (kits_df["ID Inventario"].astype(str) == str(id_real)) &
-                            (kits_df["Número Kit"].astype(str) == numero_kit)
-                        ].index[0]
+            # Guardar en historial
+            fila_hist = [
+                id_real,
+                f"{comp_row['Componente']} (Kit {numero_kit})",
+                persona,
+                "Devolución",
+                str(fecha_dev),
+                1,
+                observaciones_dev if observaciones_dev else "",
+                ver_json
+            ]
 
-                        row_number = fila_rel + 2
-                        col_estado = kits_df.columns.get_loc("Estado") + 1
-                        col_obs = kits_df.columns.get_loc("Observación") + 1
+            try:
+                sheet_historial.append_row(fila_hist)
+                actualizar_estado_y_cantidad(id_real)
+                st.success("Devolución registrada correctamente. Kit marcado como Disponible.")
+            except Exception as e:
+                st.error(f"No pude guardar en HISTORIAL: {e}")
 
-                        sheet_kits.update_cell(row_number, col_estado, "Disponible")
-                        sheet_kits.update_cell(row_number, col_obs,
-                                               observaciones_dev if observaciones_dev else "")
-                    except Exception:
-                        st.warning("No pude actualizar el estado del kit (verifica permisos).")
+            st.stop()
 
-                    # serializar verificación a JSON válido
-                    ver_json = json.dumps(verificacion, ensure_ascii=False)
+        # --------------------------------
+        # DEVOLUCIÓN NORMAL DE COMPONENTE
+        # --------------------------------
+        historial = sheet_historial.get_all_records()
 
-                    fila_hist = [
-                        id_real,
-                        f"{comp_row['Componente']} (Kit {numero_kit})",
-                        persona,
-                        "Devolución",
-                        str(fecha_dev),
-                        1,
-                        observaciones_dev if observaciones_dev else "",
-                        ver_json
-                    ]
+        total_prestado = sum(
+            int(h["Cantidad"]) for h in historial
+            if str(h["ID"]) == id_real
+            and h["Acción"].lower() == "préstamo"
+            and h["Persona"].lower() == persona.lower()
+        )
 
-                    try:
-                        sheet_historial.append_row(fila_hist)
-                        actualizar_estado_y_cantidad(id_real)
-                        st.success("Devolución y verificación guardadas. Kit Disponible.")
-                    except Exception as e:
-                        st.error(f"No pude guardar la devolución en HISTORIAL: {e}")
+        total_devuelto = sum(
+            int(h["Cantidad"]) for h in historial
+            if str(h["ID"]) == id_real
+            and h["Acción"].lower() == "devolución"
+            and h["Persona"].lower() == persona.lower()
+        )
 
-                else:
-                    # devolución simple (no kit)
-                    historial = sheet_historial.get_all_records()
+        pendiente = total_prestado - total_devuelto
 
-                    total_prestado = sum(
-                        int(h["Cantidad"]) for h in historial
-                        if str(h["ID"]) == str(id_real)
-                        and str(h["Acción"]).lower() == "préstamo"
-                        and h["Persona"].lower() == persona.lower()
-                    )
-                    total_devuelto = sum(
-                        int(h["Cantidad"]) for h in historial
-                        if str(h["ID"]) == str(id_real)
-                        and str(h["Acción"]).lower() == "devolución"
-                        and h["Persona"].lower() == persona.lower()
-                    )
+        if pendiente <= 0:
+            st.error("No hay préstamos pendientes para esta persona.")
+            st.stop()
 
-                    pendiente = total_prestado - total_devuelto
+        cantidad_dev = st.number_input("Cantidad a devolver:", min_value=1, max_value=pendiente, value=1)
 
-                    if pendiente <= 0:
-                        st.error("No hay préstamos pendientes para esta persona.")
-                    else:
-                        cantidad_dev = st.number_input(
-                            "Cantidad a devolver:", min_value=1, max_value=pendiente, value=1
-                        )
+        fila_hist = [
+            id_real,
+            comp_row["Componente"],
+            persona,
+            "Devolución",
+            str(fecha_dev),
+            int(cantidad_dev),
+            observaciones_dev if observaciones_dev else "",
+            "[]"
+        ]
 
-                        if st.button("Confirmar devolución de componente"):
-                            fila_hist = [
-                                id_real,
-                                comp_row["Componente"],
-                                persona,
-                                "Devolución",
-                                str(fecha_dev),
-                                int(cantidad_dev),
-                                observaciones_dev if observaciones_dev else "",
-                                "[]"
-                            ]
-                            try:
-                                sheet_historial.append_row(fila_hist)
-                                actualizar_estado_y_cantidad(id_real)
-                                st.success("Devolución registrada correctamente.")
-                            except Exception as e:
-                                st.error(f"No pude guardar la devolución en HISTORIAL: {e}")
+        try:
+            sheet_historial.append_row(fila_hist)
+            actualizar_estado_y_cantidad(id_real)
+            st.success("Devolución registrada correctamente.")
+        except Exception as e:
+            st.error(f"No pude guardar: {e}")
+
 
 
 # ------------------------------
@@ -580,6 +598,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
