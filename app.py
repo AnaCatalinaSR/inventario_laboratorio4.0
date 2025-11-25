@@ -184,16 +184,28 @@ def actualizar_estado_y_cantidad(id_componente):
 def mostrar_tabla_verificacion(df_componentes, key_prefix="verif"):
     df = df_componentes.copy()
 
+    # Detectar el nombre correcto de la columna
+    col_nombre = None
+    for posible in ["INVENTARIO", "Elemento", "Nombre", "Item"]:
+        if posible in df.columns:
+            col_nombre = posible
+            break
+
+    if col_nombre is None:
+        st.error("❌ No se encontró una columna válida ('INVENTARIO' o 'Elemento') en el kit.")
+        return df_componentes
+
     checks = []
     for i, row in df.iterrows():
         check_val = st.checkbox(
-            f"✔ {row['INVENTARIO']}",
+            f"✔ {row[col_nombre]}",
             key=f"{key_prefix}_{i}"
         )
         checks.append(check_val)
 
     df["Presente"] = checks
     return df
+
 
 # ====================================
 # MENÚ PRINCIPAL
@@ -343,7 +355,9 @@ elif menu == "Registrar Préstamo":
                             st.warning("No pude actualizar el estado del kit (verifica permisos).")
 
                 # verificación -> JSON
-                ver_json = json.dumps(verificacion, ensure_ascii=False)
+                ver_json = verificacion.to_dict(orient="records")
+                ver_json = json.dumps(ver_json, ensure_ascii=False)
+
 
                 # construir fila para append (ajusta orden según tu hoja HISTORIAL)
                 # tu esquema anterior era: [ID, Componente, Persona, Acción, Fecha, Cantidad, Observaciones]
@@ -529,6 +543,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
