@@ -298,6 +298,7 @@ elif menu == "Registrar Préstamo":
                 url_qr = kit_row.get("QR", "")
 
                 # mostrar verificación (fallback)
+                def mostrar_verificacion_con_fallback(titulo, url_qr, key_prefix):
                 verificacion = []
                 
                 if es_kit and numero_kit and url_qr:
@@ -524,6 +525,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
