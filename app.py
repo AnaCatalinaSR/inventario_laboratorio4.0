@@ -274,15 +274,20 @@ elif menu == "Registrar Préstamo":
                 st.write("Observación:", kit_row.get("Observación", ""))
                 url_qr = kit_row.get("QR", "")
 
-                # mostrar verificación (fallback)
+                # Mostrar tabla de verificación del kit (sin fallback)
                 verificacion = []
-                if es_kit and numero_kit and url_qr and comp_row is not None:
-                    verificacion = mostrar_verificacion_con_fallback(
-                        f"{comp_row['Componente']} - Kit #{numero_kit}",
-                        url_qr,
+                if es_kit and numero_kit:
+                    try:
+                        df_kit = pd.read_json(url_qr)   # si el QR contiene un JSON válido
+                    except:
+                        df_kit = pd.DataFrame({"Elemento": [], "Cantidad": []})
+                
+                    st.subheader("Verificación del kit")
+                    verificacion = mostrar_tabla_verificacion(
+                        df_kit,
                         key_prefix=f"pre_{id_real}_{numero_kit}"
                     )
-                    
+
         # Datos del préstamo
         nombre = st.text_input("Nombre de quien realiza el préstamo")
         fecha_prestamo = st.date_input("Fecha del préstamo", value=datetime.now().date())
@@ -511,6 +516,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
