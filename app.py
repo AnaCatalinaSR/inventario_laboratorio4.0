@@ -9,6 +9,33 @@ from PIL import Image
 import os
 from streamlit_cookies_manager import EncryptedCookieManager
 import re
+# ================================
+#   CARGA CON CACHE 
+# ================================
+@st.cache_data
+def cargar_inventario():
+    df = pd.DataFrame(sheet_inventario.get_all_records())
+    return df
+
+@st.cache_data
+def cargar_kits():
+    df = pd.DataFrame(sheet_kits.get_all_records())
+    return df
+
+@st.cache_data
+def cargar_historial():
+    df = pd.DataFrame(sheet_historial.get_all_records())
+    return df
+
+# ================================
+#   BOTÓN PARA FORZAR REFRESCO
+# ================================
+st.sidebar.subheader("Recargar datos")
+if st.sidebar.button("🔄 Actualizar datos ahora"):
+    cargar_inventario.clear()
+    cargar_kits.clear()
+    cargar_historial.clear()
+    st.sidebar.success("Datos actualizados correctamente.")
 
 # --------------------------
 # COOKIES CONFIG
@@ -598,6 +625,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
