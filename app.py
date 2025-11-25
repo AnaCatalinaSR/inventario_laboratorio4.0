@@ -217,6 +217,71 @@ def mostrar_verificacion_kit(nombre_kit, url_qr, creds):
 
     return estados
 
+# ---------------------------
+# mostrar_verificacion_con_fallback
+# ---------------------------
+def mostrar_verificacion_con_fallback(titulo, url_qr, key_prefix):
+    """
+    Intenta cargar la lista del kit desde el URL del QR (otro Google Sheet).
+    Si no puede (permisos / url inválida) muestra un fallback donde el usuario
+    pega manualmente la lista (una por línea).
+    Devuelve lista de dicts: [{'Elemento': 'x', 'OK': True/False}, ...]
+    """
+    verificacion = []
+
+    st.markdown(f"#### {titulo}")
+
+    # intentar carga automática desde QR
+    tabla = intentar_cargar_tabla_desde_qr(url_qr) if url_qr else None
+
+    if tabla:
+        # asegurar que tabla sea lista de dicts -> convertir a DataFrame para mostrar bonito
+        try:
+            df_tab = pd.DataFrame(tabla)
+            st.write("**Contenido cargado desde el documento del QR:**")
+            st.dataframe(df_tab, use_container_width=True)
+        except Exception:
+            # si no se puede convertir, simplemente itera sobre filas
+            st.write("Contenido (formato crudo):")
+            st.write(tabla)
+
+        st.write("Marca los ítems presentes:")
+        for i, fila in enumerate(tabla):
+            # intenta encontrar la columna que represente el nombre del elemento
+            elemento = fila.get("Elemento") or fila.get("Item") or fila.get("Nombre") or str(fila)
+            chk_key = f"{key_prefix}_auto_{i}"
+            ok = st.checkbox(elemento, key=chk_key, value=True)
+            verificacion.append({"Elemento": elemento, "OK": bool(ok)})
+    else:
+        st.warning("No se pudo leer automáticamente el documento apuntado por el QR.")
+        # mostrar correo de service account si está disponible
+        try:
+            creds_secret = st.secrets.get("credentials")
+            if creds_secret:
+                if isinstance(creds_secret, str):
+                    parsed = json.loads(creds_secret)
+                else:
+                    parsed = creds_secret
+                client_email = parsed.get("client_email")
+                if client_email:
+                    st.info(f"Comparte el documento con este correo de service account: `{client_email}` (permiso Viewer)")
+        except Exception:
+            pass
+
+        st.markdown("Pega la lista del kit (una línea = un elemento). Después marca los que estén OK.")
+        texto = st.text_area(f"Lista manual ({key_prefix})", height=180, placeholder="Arduino UNO\nCables Dupont\nProtoboard")
+        if texto:
+            lineas = [l.strip() for l in texto.splitlines() if l.strip()]
+            for i, elemento in enumerate(lineas):
+                chk_key = f"{key_prefix}_manual_{i}"
+                ok = st.checkbox(elemento, key=chk_key, value=True)
+                verificacion.append({"Elemento": elemento, "OK": bool(ok)})
+        else:
+            st.info("Si no pegas la lista manual, la verificación quedará vacía si guardas ahora.")
+
+    return verificacion
+
+
 
 # ====================================
 # MENÚ PRINCIPAL
@@ -298,10 +363,8 @@ elif menu == "Registrar Préstamo":
                 url_qr = kit_row.get("QR", "")
 
                 # mostrar verificación (fallback)
-                def mostrar_verificacion_con_fallback(titulo, url_qr, key_prefix):
                 verificacion = []
-                
-                if es_kit and numero_kit and url_qr:
+                if es_kit and numero_kit and url_qr and comp_row is not None:
                     verificacion = mostrar_verificacion_con_fallback(
                         f"{comp_row['Componente']} - Kit #{numero_kit}",
                         url_qr,
@@ -419,7 +482,15 @@ elif menu == "Registrar Devolución":
                     numero_kit = str(row_kit["Número Kit"])
                     url_qr = row_kit.get("QR", "")
                     # mostrar verificación
-                    verificacion = mostrar_verificacion_con_fallback(f"{comp_row['Componente']} - Kit #{numero_kit}", url_qr, key_prefix=f"dev_{id_real}_{numero_kit}")
+                    
+                    verificacion = []
+                    if es_kit and numero_kit and url_qr and comp_row is not None:
+                        verificacion = mostrar_verificacion_con_fallback(
+                            f"{comp_row['Componente']} - Kit #{numero_kit}",
+                            url_qr,
+                            key_prefix=f"dev_{id_real}_{numero_kit}"
+                        )
+                   
 
         # datos devolución
         persona = st.text_input("Persona que devuelve")
@@ -525,6 +596,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
