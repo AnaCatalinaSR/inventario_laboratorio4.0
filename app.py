@@ -229,26 +229,27 @@ def mostrar_tabla_verificacion(df_componentes, key_prefix="verif"):
             break
 
     if col_nombre is None:
-        st.error("❌ No se encontró una columna válida ('INVENTARIO', 'Elemento', 'Nombre' o 'Item') en el kit.")
+        st.error("❌ No se encontró una columna válida ('INVENTARIO', 'Elemento', 'Nombre', 'Item').")
         return df_componentes
 
-    checks = []
-    for i, row in df.iterrows():
-        nombre = row[col_nombre]
+    st.subheader("Verificación de componentes del kit")
+    st.write("✓ Todos aparecen como **PRESENTES** por defecto. Marca solo los que **FALTAN**.")
 
-        # Checkbox para marcar si está presente
-        check_val = st.checkbox(
-            f"{'✔️' if check_val else '❌'} {nombre}" if 'check_val' in locals() else f"❌ {nombre}",
-            key=f"{key_prefix}_{i}"
+    faltantes = []
+    for i, row in df.iterrows():
+
+        # Checkbox SE MARCA solo si el componente FALTA
+        falta = st.checkbox(
+            f"❌ Falta: {row[col_nombre]}",
+            key=f"{key_prefix}_{i}",
+            value=False  # por defecto NO falta
         )
 
-        # Actualizar ícono después de marcar
-        st.write(f"{'✔️ Presente' if check_val else '❌ Faltante'} → {nombre}")
+        faltantes.append(falta)
 
-        checks.append(check_val)
-
-    df["Presente"] = checks
+    df["Faltante"] = faltantes
     return df
+
 
 
 
@@ -668,6 +669,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
