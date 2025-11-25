@@ -9,23 +9,39 @@ from PIL import Image
 import os
 from streamlit_cookies_manager import EncryptedCookieManager
 import re
-# ================================
-#   CARGA CON CACHE 
-# ================================
-@st.cache_data
+
+
+# -----------------------------------------------
+# CARGA DE GOOGLE SHEETS CON CACHE EXTENDIDO
+# -----------------------------------------------
+
+@st.cache_data(ttl=300, show_spinner=False)
 def cargar_inventario():
-    df = pd.DataFrame(sheet_inventario.get_all_records())
-    return df
+    try:
+        datos = sheet_inventario.get_all_records()
+        return pd.DataFrame(datos)
+    except Exception as e:
+        st.error("⚠ No se pudo cargar el inventario desde Google Sheets.")
+        st.stop()
 
-@st.cache_data
+@st.cache_data(ttl=300, show_spinner=False)
 def cargar_kits():
-    df = pd.DataFrame(sheet_kits.get_all_records())
-    return df
+    try:
+        datos = sheet_kits.get_all_records()
+        return pd.DataFrame(datos)
+    except Exception as e:
+        st.error("⚠ No se pudo cargar la tabla de kits desde Google Sheets.")
+        st.stop()
 
-@st.cache_data
+@st.cache_data(ttl=300, show_spinner=False)
 def cargar_historial():
-    df = pd.DataFrame(sheet_historial.get_all_records())
-    return df
+    try:
+        datos = sheet_historial.get_all_records()
+        return pd.DataFrame(datos)
+    except Exception as e:
+        st.error("⚠ No se pudo cargar el historial desde Google Sheets.")
+        st.stop()
+
 
 # ================================
 #   BOTÓN PARA FORZAR REFRESCO
@@ -648,6 +664,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
