@@ -227,7 +227,7 @@ def actualizar_estado_y_cantidad(id_componente):
 def mostrar_tabla_verificacion(df_componentes, key_prefix="verif"):
     df = df_componentes.copy()
 
-    # Detectar el nombre correcto de la columna
+    # Detectar la columna del nombre del componente
     col_nombre = None
     for posible in ["INVENTARIO", "Elemento", "Nombre", "Item"]:
         if posible in df.columns:
@@ -235,19 +235,39 @@ def mostrar_tabla_verificacion(df_componentes, key_prefix="verif"):
             break
 
     if col_nombre is None:
-        st.error("❌ No se encontró una columna válida ('INVENTARIO' o 'Elemento') en el kit.")
+        st.error("❌ No se encontró una columna válida ('INVENTARIO', 'Elemento', etc.)")
         return df_componentes
 
+    st.subheader("Verificación de componentes del kit")
+
     checks = []
+    estados = []
+
     for i, row in df.iterrows():
         check_val = st.checkbox(
-            f"✔ {row[col_nombre]}",
+            f"{row[col_nombre]}",
             key=f"{key_prefix}_{i}"
         )
+
         checks.append(check_val)
 
+        if check_val:
+            estados.append("Presente")
+        else:
+            estados.append("❌ Faltante")
+
+    df["Estado"] = estados
     df["Presente"] = checks
+
+    # Mostrar tabla bonita con colores
+    st.write(
+        df[[col_nombre, "Estado"]]
+        .style.apply(lambda x: ["color: red" if v == "❌ Faltante" else "color: green"
+                                for v in x], axis=1)
+    )
+
     return df
+
 
 
 # ====================================
@@ -664,6 +684,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
