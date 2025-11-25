@@ -473,7 +473,8 @@ elif menu == "Registrar Devolución":
     es_kit = not kits_relacionados.empty
 
     numero_kit = None
-    verificacion = []
+    tabla_verif = None
+    col_nombre = None
     df_kit = pd.DataFrame()
 
     # =========================================================
@@ -504,12 +505,9 @@ elif menu == "Registrar Devolución":
             numero_kit = str(row_kit["Número Kit"])
             url_qr = row_kit.get("QR", "")
 
-            # Cargar tabla desde el QR (ya usa la función correcta)
+            # Cargar tabla del kit
             data_kit = intentar_cargar_tabla_desde_qr(url_qr)
-            if not data_kit:
-                df_kit = pd.DataFrame()
-            else:
-                df_kit = pd.DataFrame(data_kit)
+            df_kit = pd.DataFrame(data_kit) if data_kit else pd.DataFrame()
 
             st.subheader("Verificación del kit")
 
@@ -518,28 +516,30 @@ elif menu == "Registrar Devolución":
                 key_prefix=f"dev_{id_real}_{numero_kit}"
             )
 
-            # Serializar verificación
-            col_nombre = None
+            # Detectar columna de nombre de componente
             for posible in ["INVENTARIO", "Elemento", "Nombre", "Item"]:
                 if posible in tabla_verif.columns:
                     col_nombre = posible
                     break
 
-            if col_nombre:
-                verificacion = [
-                    {
-                        "Elemento": str(tabla_verif.iloc[i][col_nombre]),
-                        "Presente": bool(tabla_verif.iloc[i]["Presente"])
-                    }
-                    for i in range(len(tabla_verif))
-                ]
-            else:
-                verificacion = []
+    # =========================================================
+    #      FALTANTES (solo si tabla_verif existe)
+    # =========================================================
+    faltantes = []
+    if tabla_verif is not None and col_nombre is not None:
+        faltantes = [
+            str(tabla_verif.iloc[i][col_nombre])
+            for i in range(len(tabla_verif))
+            if not bool(tabla_verif.iloc[i]["Presente"])
+        ]
+
+    texto_faltantes = ", ".join(faltantes) if faltantes else "Sin faltantes"
 
     # Datos generales
     persona = st.text_input("Persona que devuelve")
     fecha_dev = st.date_input("Fecha de devolución", value=datetime.now().date())
     observaciones_dev = st.text_area("Observaciones (opcional)")
+
 
     # =========================================================
     #      BOTÓN DE REGISTRO
@@ -573,18 +573,16 @@ elif menu == "Registrar Devolución":
                 st.error(f"No pude actualizar el estado del kit: {e}")
                 st.stop()
 
-            # Guardar verificación
-            ver_json = json.dumps(verificacion, ensure_ascii=False)
-
+            # Registrar en historial
             fila_hist = [
                 id_real,
-                f"{comp_row['Componente']} (Kit {numero_kit})",
+                comp_row["Componente"],
                 persona,
                 "Devolución",
                 str(fecha_dev),
                 1,
-                observaciones_dev if observaciones_dev else "",
-                ver_json
+                texto_faltantes,   # FALTANTES
+                numero_kit         # NÚMERO DE KIT
             ]
 
             try:
@@ -602,14 +600,14 @@ elif menu == "Registrar Devolución":
         historial = cargar_historial()
 
         total_prestado = sum(
-            int(h["Cantidad"]) for h in historial
+            int(h["Cantidad"]) for _, h in historial.iterrows()
             if str(h["ID"]) == id_real
             and h["Acción"].lower() == "préstamo"
             and h["Persona"].lower() == persona.lower()
         )
 
         total_devuelto = sum(
-            int(h["Cantidad"]) for h in historial
+            int(h["Cantidad"]) for _, h in historial.iterrows()
             if str(h["ID"]) == id_real
             and h["Acción"].lower() == "devolución"
             and h["Persona"].lower() == persona.lower()
@@ -636,7 +634,7 @@ elif menu == "Registrar Devolución":
             str(fecha_dev),
             int(cantidad_dev),
             observaciones_dev if observaciones_dev else "",
-            "[]"
+            ""
         ]
 
         try:
@@ -672,6 +670,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
