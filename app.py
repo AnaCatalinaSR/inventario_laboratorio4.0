@@ -15,14 +15,9 @@ import re
 # CARGA DE GOOGLE SHEETS CON CACHE EXTENDIDO
 # -----------------------------------------------
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=30)
 def cargar_inventario():
-    try:
-        datos = sheet_inventario.get_all_records()
-        return pd.DataFrame(datos)
-    except Exception as e:
-        st.error("⚠ No se pudo cargar el inventario desde Google Sheets.")
-        st.stop()
+    return pd.DataFrame(sheet_inventario.get_all_records())
 
 @st.cache_data(ttl=300, show_spinner=False)
 def cargar_kits():
@@ -673,6 +668,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
