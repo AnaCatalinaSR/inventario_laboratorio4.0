@@ -42,7 +42,7 @@ def cargar_historial():
 #   BOTÓN PARA FORZAR REFRESCO
 # ================================
 st.sidebar.subheader("Recargar datos")
-if st.sidebar.button("🔄 Actualizar datos ahora"):
+if st.sidebar.button("Actualizar datos ahora"):
     cargar_inventario.clear()
     cargar_kits.clear()
     cargar_historial.clear()
@@ -362,7 +362,7 @@ elif menu == "Registrar Préstamo":
             df_kit = pd.DataFrame(data_kit) if data_kit else pd.DataFrame()
 
             st.subheader("Verificación del contenido del kit")
-            st.info("✓ Todos aparecen como PRESENTES por defecto. Marca solo los que FALTAN.")
+            st.info("✓ Todos aparecen como Presentes por defecto. Desmarca los elementos que faltan en el Kit.")
 
             tabla_verif = mostrar_tabla_verificacion(
                 df_kit,
@@ -705,6 +705,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
