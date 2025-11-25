@@ -292,12 +292,12 @@ elif menu == "Registrar Préstamo":
       
                 data_kit = intentar_cargar_tabla_desde_qr(url_qr)
                 
-                        st.subheader("Verificación del kit")
+                st.subheader("Verificación del kit")
                         
-                        verificacion = mostrar_tabla_verificacion(
-                            pd.DataFrame(data_kit),
-                            key_prefix=f"pre_{id_real}_{numero_kit}"
-                        )
+                verificacion = mostrar_tabla_verificacion(
+                    pd.DataFrame(data_kit),
+                    key_prefix=f"pre_{id_real}_{numero_kit}"
+                )
 
 
     # Continúa con los datos del préstamo…
@@ -529,6 +529,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
