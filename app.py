@@ -54,6 +54,16 @@ if not cookies.ready():
     st.stop()
 
 # -------- LOGIN SCREEN --------
+# --- LOGO / PAGE CONFIG ---
+logo_path = "logo-intep.png"
+if os.path.exists(logo_path):
+    logo = Image.open(logo_path)
+    st.set_page_config(page_title="Gestión de Préstamos", layout="wide", page_icon=logo)
+    with st.sidebar:
+        st.image(logo, width=150)
+else:
+    st.set_page_config(page_title="Gestión de Préstamos", layout="wide", page_icon="🏫")
+
 def login_screen():
     st.title("Inicio de Sesión")
     st.write("Acceso restringido al sistema de inventario.")
@@ -700,6 +710,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
