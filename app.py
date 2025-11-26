@@ -105,15 +105,7 @@ h1,h2,h3 { color:#1a3c6e; font-weight:600; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- LOGO / PAGE CONFIG ---
-logo_path = "logo-intep.png"
-if os.path.exists(logo_path):
-    logo = Image.open(logo_path)
-    st.set_page_config(page_title="Gestión de Préstamos", layout="wide", page_icon=logo)
-    with st.sidebar:
-        st.image(logo, width=150)
-else:
-    st.set_page_config(page_title="Gestión de Préstamos", layout="wide", page_icon="🏫")
+
 
 # ==============================
 # GOOGLE SHEETS (inicialización robusta)
@@ -710,6 +702,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
