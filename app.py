@@ -42,11 +42,6 @@ def cargar_historial():
 #   BOTÓN PARA FORZAR REFRESCO
 # ================================
 st.sidebar.subheader("Laboratorio de Industria 4.0")
-if st.sidebar.button("Actualizar datos ahora"):
-    cargar_inventario.clear()
-    cargar_kits.clear()
-    cargar_historial.clear()
-    st.sidebar.success("Datos actualizados correctamente.")
 
 # --------------------------
 # COOKIES CONFIG
@@ -705,6 +700,7 @@ if st.sidebar.button("Cerrar sesión"):
     cookies.save()
     st.session_state["logged_in"] = False
     st.rerun()
+
 
 
 
